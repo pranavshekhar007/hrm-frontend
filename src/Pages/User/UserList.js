@@ -9,12 +9,16 @@ import moment from "moment";
 import NoRecordFound from "../../Components/NoRecordFound";
 import { BsPencil, BsTrash } from "react-icons/bs";
 import { RiAddLine } from "react-icons/ri";
+import { FaKey } from "react-icons/fa";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+
 import {
-  getUsersServ,
-  deleteUserServ,
-  createUserServ,
-  updateUserServ,
-} from "../../services/user.service";
+  getAdminList,
+  deleteAdmin,
+  createAdmin,
+  updateAdmin,
+  resetAdminPassword,
+} from "../../services/authentication.services";
 import { getRoleListServ } from "../../services/role.services";
 
 // User avatar component
@@ -56,7 +60,7 @@ function UsersList() {
     pageNo: 1,
     pageCount: 10,
     sortByField: "",
-    sortOrder: "asc",
+    sortByOrder: "asc",
   });
 
   const [showModal, setShowModal] = useState(false);
@@ -64,9 +68,21 @@ function UsersList() {
   const [userForm, setUserForm] = useState({
     name: "",
     email: "",
+    phone: "",
     role: "",
     status: true,
+    password: "",
+    confirmPassword: "",
   });
+
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetUser, setResetUser] = useState(null);
+  const [resetForm, setResetForm] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
 
   // Fetch roles
   useEffect(() => {
@@ -85,7 +101,7 @@ function UsersList() {
   const handleGetUsers = async () => {
     setShowSkeleton(true);
     try {
-      const res = await getUsersServ(payload);
+      const res = await getAdminList(payload);
       if (res?.data && Array.isArray(res.data)) {
         setList(res.data);
         setTotalRecords(res?.documentCount?.totalCount || res.data.length);
@@ -107,7 +123,7 @@ function UsersList() {
   const handleDeleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await deleteUserServ(id);
+      await deleteAdmin(id);
       toast.success("User deleted successfully!");
       handleGetUsers();
     } catch (err) {
@@ -123,20 +139,38 @@ function UsersList() {
       phone: user.phone || "",
       role: user.role?._id || "",
       status: user.status,
+      password: "",
+      confirmPassword: "",
     });
     setShowModal(true);
   };
 
   const handleOpenAddModal = () => {
     setEditingUser(null);
-    setUserForm({ name: "", email: "", role: "", status: true });
+    setUserForm({
+      name: "",
+      email: "",
+      phone: "",
+      role: "",
+      status: true,
+      password: "",
+      confirmPassword: "",
+    });
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingUser(null);
-    setUserForm({ name: "", email: "", role: "", status: true });
+    setUserForm({
+      name: "",
+      email: "",
+      phone: "",
+      role: "",
+      status: true,
+      password: "",
+      confirmPassword: "",
+    });
   };
 
   const handleFormChange = (e) => {
@@ -153,29 +187,67 @@ function UsersList() {
       return;
     }
 
+    if (!editingUser && (!userForm.password || !userForm.confirmPassword)) {
+      toast.error("Please fill password fields.");
+      return;
+    }
+
+    if (!editingUser && userForm.password !== userForm.confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
     try {
       if (editingUser) {
-        await updateUserServ({ ...userForm, id: editingUser._id });
+        await updateAdmin(editingUser._id, userForm);
         toast.success("User updated successfully!");
       } else {
-        await createUserServ(userForm);
+        await createAdmin(userForm);
         toast.success("User added successfully!");
       }
       handleCloseModal();
       handleGetUsers();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Failed to save user");
+      toast.error(err?.message || "Failed to save user");
     }
   };
 
-  const handleSort = (field) => {
-    setPayload((prev) => ({
-      ...prev,
-      sortByField: field,
-      sortOrder:
-        prev.sortByField === field && prev.sortOrder === "asc" ? "desc" : "asc",
-      pageNo: 1,
-    }));
+  const handleOpenResetModal = (user) => {
+    setResetUser(user);
+    setResetForm({ newPassword: "", confirmPassword: "" });
+    setShowResetModal(true);
+  };
+
+  const handleCloseResetModal = () => {
+    setShowResetModal(false);
+    setResetUser(null);
+    setResetForm({ newPassword: "", confirmPassword: "" });
+  };
+
+  const handleResetPasswordChange = (e) => {
+    const { name, value } = e.target;
+    setResetForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSaveResetPassword = async () => {
+    if (!resetForm.newPassword || !resetForm.confirmPassword) {
+      return toast.error("Please fill all fields.");
+    }
+    if (resetForm.newPassword !== resetForm.confirmPassword) {
+      return toast.error("Passwords do not match.");
+    }
+
+    try {
+      await resetAdminPassword({
+        adminId: resetUser._id,
+        newPassword: resetForm.newPassword,
+        confirmPassword: resetForm.confirmPassword,
+      });
+      toast.success(`Password reset for ${resetUser.name}`);
+      handleCloseResetModal();
+    } catch (err) {
+      toast.error(err?.message || "Failed to reset password");
+    }
   };
 
   return (
@@ -210,11 +282,7 @@ function UsersList() {
                     placeholder="Search..."
                     value={payload.searchKey}
                     onChange={(e) =>
-                      setPayload({
-                        ...payload,
-                        searchKey: e.target.value,
-                        pageNo: 1,
-                      })
+                      setPayload({ ...payload, searchKey: e.target.value, pageNo: 1 })
                     }
                   />
                   <button
@@ -281,10 +349,7 @@ function UsersList() {
                               <UserAvatar name={u?.name} />
                               <div className="ms-3">
                                 <div className="fw-semibold">{u?.name}</div>
-                                <div
-                                  className="text-muted"
-                                  style={{ fontSize: 13 }}
-                                >
+                                <div className="text-muted" style={{ fontSize: 13 }}>
                                   {u?.email}
                                 </div>
                               </div>
@@ -315,6 +380,13 @@ function UsersList() {
                               style={{ cursor: "pointer" }}
                               onClick={() => handleEditUser(u)}
                             />
+                            <FaKey
+                              size={18}
+                              className="mx-2"
+                              title="Reset Password"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => handleOpenResetModal(u)}
+                            />
                             <BsTrash
                               size={18}
                               className="mx-2 text-danger"
@@ -340,7 +412,159 @@ function UsersList() {
         </div>
 
         {/* Add/Edit Modal */}
-{showModal && (
+        {showModal && (
+          <div
+            className="modal-overlay"
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2000,
+              overflowY: "auto",
+              padding: "1rem",
+            }}
+          >
+            <div
+              className="modal-content p-4 rounded-4 bg-white"
+              style={{
+                width: 364,
+                maxHeight: "90vh",
+                overflowY: "auto",
+              }}
+            >
+              <div className="d-flex justify-content-end mb-3">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/128/9068/9068699.png"
+                  style={{ height: 20, cursor: "pointer" }}
+                  onClick={handleCloseModal}
+                />
+              </div>
+
+              <h5 className="mb-4">{editingUser ? "Edit User" : "Add User"}</h5>
+
+              {/* Name */}
+              <div className="mb-3">
+                <label className="form-label mb-1 text-muted fw-normal">
+                  Name <span className="text-danger">*</span>
+                </label>
+                <input
+                  className="form-control"
+                  type="text"
+                  name="name"
+                  value={userForm.name}
+                  onChange={handleFormChange}
+                />
+              </div>
+
+              {/* Email */}
+              <div className="mb-3">
+                <label className="form-label mb-1 text-muted fw-normal">
+                  Email <span className="text-danger">*</span>
+                </label>
+                <input
+                  className="form-control"
+                  type="email"
+                  name="email"
+                  value={userForm.email}
+                  onChange={handleFormChange}
+                />
+              </div>
+
+              {/* Phone */}
+              <div className="mb-3">
+                <label className="form-label mb-1 text-muted fw-normal">
+                  Phone <span className="text-danger">*</span>
+                </label>
+                <input
+                  className="form-control"
+                  type="text"
+                  name="phone"
+                  value={userForm.phone || ""}
+                  onChange={handleFormChange}
+                />
+              </div>
+
+              {/* Password & Confirm Password only for Add */}
+              {!editingUser && (
+                <>
+                  <div className="mb-3">
+                    <label className="form-label mb-1 text-muted fw-normal">
+                      Password <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      className="form-control"
+                      type="password"
+                      name="password"
+                      value={userForm.password || ""}
+                      onChange={handleFormChange}
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label mb-1 text-muted fw-normal">
+                      Confirm Password <span className="text-danger">*</span>
+                    </label>
+                    <input
+                      className="form-control"
+                      type="password"
+                      name="confirmPassword"
+                      value={userForm.confirmPassword || ""}
+                      onChange={handleFormChange}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Role */}
+              <div className="mb-3">
+                <label className="form-label mb-1 text-muted fw-normal">
+                  Role <span className="text-danger">*</span>
+                </label>
+                <select
+                  className="form-control"
+                  name="role"
+                  value={userForm.role}
+                  onChange={handleFormChange}
+                >
+                  <option value="">Select Role</option>
+                  {roles.map((r) => (
+                    <option key={r._id} value={r._id}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status */}
+              <div className="mb-3">
+                <label className="form-label mb-1 text-muted fw-normal">
+                  Status
+                </label>
+                <select
+                  className="form-control"
+                  name="status"
+                  value={userForm.status}
+                  onChange={handleFormChange}
+                >
+                  <option value={true}>Active</option>
+                  <option value={false}>Inactive</option>
+                </select>
+              </div>
+
+              <button
+                className="btn btn-success w-100 mt-3"
+                onClick={handleSaveUser}
+              >
+                {editingUser ? "Update" : "Submit"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Reset Password Modal */}
+        {showResetModal && (
   <div
     className="modal-overlay"
     style={{
@@ -350,8 +574,8 @@ function UsersList() {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 2000,
-      overflowY: "auto", // allows scrolling if modal is tall
+      zIndex: 3000,
+      overflowY: "auto",
       padding: "1rem",
     }}
   >
@@ -359,147 +583,81 @@ function UsersList() {
       className="modal-content p-4 rounded-4 bg-white"
       style={{
         width: 364,
-        maxHeight: "90vh", // limits modal height
-        overflowY: "auto", // scroll inside modal if content is long
+        maxHeight: "90vh",
+        overflowY: "auto",
       }}
     >
-      {/* Close Button */}
       <div className="d-flex justify-content-end mb-3">
         <img
           src="https://cdn-icons-png.flaticon.com/128/9068/9068699.png"
           style={{ height: 20, cursor: "pointer" }}
-          onClick={handleCloseModal}
+          onClick={handleCloseResetModal}
         />
       </div>
 
-      <h5 className="mb-4">{editingUser ? "Edit User" : "Add User"}</h5>
+      <h5 className="mb-4">Reset Password for {resetUser?.name}</h5>
 
-      {/* Name */}
-      <div className="mb-3">
+      {/* New Password */}
+      <div className="mb-3 position-relative">
         <label className="form-label mb-1 text-muted fw-normal">
-          Name <span className="text-danger">*</span>
+          New Password <span className="text-danger">*</span>
         </label>
         <input
           className="form-control"
-          type="text"
-          name="name"
-          value={userForm.name}
-          onChange={handleFormChange}
+          type={showNewPass ? "text" : "password"}
+          name="newPassword"
+          value={resetForm.newPassword}
+          onChange={handleResetPasswordChange}
         />
-      </div>
-
-      {/* Email */}
-      <div className="mb-3">
-        <label className="form-label mb-1 text-muted fw-normal">
-          Email <span className="text-danger">*</span>
-        </label>
-        <input
-          className="form-control"
-          type="email"
-          name="email"
-          value={userForm.email}
-          onChange={handleFormChange}
-        />
-      </div>
-
-      {/* Phone */}
-      <div className="mb-3">
-        <label className="form-label mb-1 text-muted fw-normal">
-          Phone <span className="text-danger">*</span>
-        </label>
-        <input
-          className="form-control"
-          type="text"
-          name="phone"
-          value={userForm.phone || ""}
-          onChange={handleFormChange}
-        />
-      </div>
-
-      {/* Password & Confirm Password only for Add */}
-      {!editingUser && (
-        <>
-          <div className="mb-3">
-            <label className="form-label mb-1 text-muted fw-normal">
-              Password <span className="text-danger">*</span>
-            </label>
-            <input
-              className="form-control"
-              type="password"
-              name="password"
-              value={userForm.password || ""}
-              onChange={handleFormChange}
-            />
-          </div>
-          <div className="mb-3">
-            <label className="form-label mb-1 text-muted fw-normal">
-              Confirm Password <span className="text-danger">*</span>
-            </label>
-            <input
-              className="form-control"
-              type="password"
-              name="confirmPassword"
-              value={userForm.confirmPassword || ""}
-              onChange={handleFormChange}
-            />
-          </div>
-        </>
-      )}
-
-      {/* Role */}
-      <div className="mb-3">
-        <label className="form-label mb-1 text-muted fw-normal">
-          Role <span className="text-danger">*</span>
-        </label>
-        <select
-          className="form-control"
-          name="role"
-          value={userForm.role}
-          onChange={handleFormChange}
+        <span
+          style={{
+            position: "absolute",
+            right: 10,
+            top: 34,
+            cursor: "pointer",
+            color: "#6B7280",
+          }}
+          onClick={() => setShowNewPass((prev) => !prev)}
         >
-          <option value="">Select Role</option>
-          {roles.map((r) => (
-            <option key={r._id} value={r._id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+          {showNewPass ? <FaEyeSlash /> : <FaEye />}
+        </span>
       </div>
 
-      {/* Status */}
-      <div className="mb-3">
+      {/* Confirm Password */}
+      <div className="mb-3 position-relative">
         <label className="form-label mb-1 text-muted fw-normal">
-          Status
+          Confirm Password <span className="text-danger">*</span>
         </label>
-        <select
+        <input
           className="form-control"
-          name="status"
-          value={userForm.status}
-          onChange={handleFormChange}
+          type={showConfirmPass ? "text" : "password"}
+          name="confirmPassword"
+          value={resetForm.confirmPassword}
+          onChange={handleResetPasswordChange}
+        />
+        <span
+          style={{
+            position: "absolute",
+            right: 10,
+            top: 34,
+            cursor: "pointer",
+            color: "#6B7280",
+          }}
+          onClick={() => setShowConfirmPass((prev) => !prev)}
         >
-          <option value={true}>Active</option>
-          <option value={false}>Inactive</option>
-        </select>
+          {showConfirmPass ? <FaEyeSlash /> : <FaEye />}
+        </span>
       </div>
 
-      {/* Submit / Update Button */}
       <button
         className="btn btn-success w-100 mt-3"
-        onClick={handleSaveUser}
-        disabled={
-          !userForm.name ||
-          !userForm.email ||
-          !userForm.phone ||
-          !userForm.role ||
-          (!editingUser && (!userForm.password || !userForm.confirmPassword))
-        }
+        onClick={handleSaveResetPassword}
       >
-        {editingUser ? "Update" : "Submit"}
+        Reset Password
       </button>
     </div>
   </div>
 )}
-
       </div>
     </div>
   );

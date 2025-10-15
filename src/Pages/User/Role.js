@@ -14,11 +14,17 @@ import { FaSearch } from "react-icons/fa";
 import { RiAddLine } from "react-icons/ri";
 
 import { getRoleListServ, deleteRoleServ } from "../../services/role.services";
+import AddRoleModal from "./AddRoleModel";
+import EditRoleModal from "./EditRoleModal";
 
 function RolesList() {
   const [list, setList] = useState([]);
   const [totalRecords, setTotalRecords] = useState(0);
   const [showSkeleton, setShowSkeleton] = useState(false);
+  
+  const [showAddRoleModal, setShowAddRoleModal] = useState(false); 
+  const [showEditRoleModal, setShowEditRoleModal] = useState(false);
+  const [editRoleId, setEditRoleId] = useState(null);
 
   const [payload, setPayload] = useState({
     searchKey: "",
@@ -28,7 +34,6 @@ function RolesList() {
     sortOrder: "asc",
   });
 
-  // ✅ Fetch roles from backend
   const handleGetRoles = async () => {
     setShowSkeleton(true);
     try {
@@ -48,7 +53,6 @@ function RolesList() {
     handleGetRoles();
   }, [payload]);
 
-  // ✅ Delete Role
   const handleDeleteRole = async (id) => {
     if (!window.confirm("Are you sure you want to delete this role?")) return;
     try {
@@ -65,12 +69,26 @@ function RolesList() {
   };
 
   const handleEditRole = (role) => {
-    toast.info(`Editing role: ${role.name}`);
+    setEditRoleId(role._id);
+    setShowEditRoleModal(true);
+  };
+  
+  const handleCloseEditModal = () => {
+    setShowEditRoleModal(false);
+    setEditRoleId(null);
   };
 
   const handleAddRoleClick = () => {
-    toast.info("Add Role modal will appear here.");
+    setShowAddRoleModal(true);
   };
+  
+  const handleRoleChanged = () => {
+    setPayload((prev) => ({ ...prev, pageNo: 1 }));
+    handleGetRoles(); 
+  };
+
+  const handleRoleAdded = handleRoleChanged;
+  const handleRoleUpdated = handleRoleChanged;
 
   const handleSort = (field) => {
     setPayload((prev) => ({
@@ -93,7 +111,6 @@ function RolesList() {
         <TopNav />
 
         <div className="p-lg-4 p-md-3 p-2">
-          {/* Page Title and Add Button */}
           <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
             <h3 className="fw-semibold mb-0">Roles</h3>
             <button
@@ -110,7 +127,6 @@ function RolesList() {
             </button>
           </div>
 
-          {/* Search & Per Page */}
           <div className="card shadow-sm p-3 mb-4 rounded-3 border-0">
             <div className="row g-2 align-items-center">
               <div className="col-lg-8 col-md-8">
@@ -164,7 +180,6 @@ function RolesList() {
             </div>
           </div>
 
-          {/* Roles Table */}
           <div className="card shadow-sm p-0 rounded-3 border-0 overflow-hidden">
             <div className="card-body p-0">
               <div className="table-responsive">
@@ -239,10 +254,9 @@ function RolesList() {
                         ))
                       : list.length > 0
                       ? list.map((role, i) => {
-                          // Extract permission names
-                          const permissions = role.permissions.map(
-                            (perm) => perm.permissionId?.name
-                          );
+                          const permissions = Array.isArray(role.permissions) 
+                            ? role.permissions.map((perm) => perm.permissionId?.name)
+                            : [];
 
                           return (
                             <tr key={role._id} className="border-bottom">
@@ -335,6 +349,19 @@ function RolesList() {
 
         </div>
       </div>
+
+      <AddRoleModal 
+        show={showAddRoleModal} 
+        onClose={() => setShowAddRoleModal(false)} 
+        onRoleAdded={handleRoleAdded}
+      />
+      
+      <EditRoleModal
+        show={showEditRoleModal}
+        onClose={handleCloseEditModal}
+        onRoleUpdated={handleRoleUpdated}
+        roleId={editRoleId}
+      />
     </div>
   );
 }

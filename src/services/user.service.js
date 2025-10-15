@@ -33,16 +33,17 @@ export const loginUserServ = async (formData) => {
     throw err.response?.data || err;
   }
 };
-
-export const resetPasswordServ = async (formData) => {
+export const resetPasswordServ = async (id, formData) => {
   try {
-    const res = await axios.post(`${BASE_URL}user/reset-password`, formData);
+    const config = getAuthConfig();
+    const res = await axios.post(`${BASE_URL}user/reset-password/${id}`, formData, config);
     return res.data;
   } catch (err) {
     console.error("Error resetting password:", err);
     throw err.response?.data || err;
   }
 };
+
 
 export const createUserServ = async (formData) => {
   try {
