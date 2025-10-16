@@ -10,13 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 import moment from "moment";
 import NoRecordFound from "../../Components/NoRecordFound";
 
-import {
-  BsPencil,
-  BsTrash,
-  BsEye,
-  BsChevronDown,
-  BsX,
-} from "react-icons/bs";
+import { BsPencil, BsTrash, BsEye } from "react-icons/bs";
 import { FaSearch } from "react-icons/fa";
 import { RiAddLine } from "react-icons/ri";
 
@@ -43,14 +37,15 @@ function BranchList() {
   });
 
   const [branchForm, setBranchForm] = useState({
-    name: "",
+    branchName: "",
     address: "",
     city: "",
     state: "",
     country: "",
-    zipCode: "",
-    contactEmail: "",
-    contactPhone: "",
+    zipcode: "",
+    email: "",
+    phone: "",
+    status: true,
   });
 
   // ✅ Fetch Branch List
@@ -74,14 +69,15 @@ function BranchList() {
   const handleOpenAddModal = () => {
     setEditingBranch(null);
     setBranchForm({
-      name: "",
+      branchName: "",
       address: "",
       city: "",
       state: "",
       country: "",
-      zipCode: "",
-      contactEmail: "",
-      contactPhone: "",
+      zipcode: "",
+      email: "",
+      phone: "",
+      status: true,
     });
     setShowModal(true);
   };
@@ -89,14 +85,15 @@ function BranchList() {
   const handleOpenEditModal = (branch) => {
     setEditingBranch(branch);
     setBranchForm({
-      name: branch.name || "",
+      branchName: branch.branchName || "",
       address: branch.address || "",
       city: branch.city || "",
       state: branch.state || "",
       country: branch.country || "",
-      zipCode: branch.zipCode || "",
-      contactEmail: branch.contactEmail || "",
-      contactPhone: branch.contactPhone || "",
+      zipcode: branch.zipcode || "",
+      email: branch.email || "",
+      phone: branch.phone || "",
+      status: branch.status,
     });
     setShowModal(true);
   };
@@ -107,13 +104,16 @@ function BranchList() {
   };
 
   const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setBranchForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setBranchForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   // ✅ Save (Create / Update)
   const handleSaveBranch = async () => {
-    if (!branchForm.name || !branchForm.address || !branchForm.city || !branchForm.country) {
+    if (!branchForm.branchName || !branchForm.city || !branchForm.country) {
       toast.error("Please fill all required fields.");
       return;
     }
@@ -156,11 +156,6 @@ function BranchList() {
     }));
   };
 
-  // ✅ Pagination Calculations
-  const startIndex = (payload.pageNo - 1) * payload.pageCount;
-  const endIndex = Math.min(startIndex + payload.pageCount, totalRecords);
-  const totalPages = Math.ceil(totalRecords / payload.pageCount);
-
   return (
     <div className="bodyContainer">
       <Sidebar selectedMenu="Hr Management" selectedItem="Branches" />
@@ -192,6 +187,7 @@ function BranchList() {
                   <input
                     className="form-control"
                     placeholder="Search..."
+                    value={payload.searchKey}
                     onChange={(e) =>
                       setPayload({ ...payload, searchKey: e.target.value, pageNo: 1 })
                     }
@@ -226,53 +222,49 @@ function BranchList() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="card shadow-sm rounded-3 border-0 overflow-hidden">
-            <div className="card-body p-0">
-              <div className="table-responsive">
-                <table className="table align-middle mb-0">
-                  <thead>
-                    <tr style={{ background: "#F8FAFC", color: "#6B7280" }}>
-                      <th className="ps-4">#</th>
-                      <th onClick={() => handleSort("name")} className="cursor-pointer">
-                        Name <BsChevronDown size={12} />
-                      </th>
-                      <th>Address</th>
-                      <th>Contact</th>
-                      <th>Status</th>
-                      <th>Created At</th>
-                      <th className="text-center pe-4">Actions</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {showSkeleton ? (
-                      Array.from({ length: payload.pageCount }).map((_, i) => (
+          {/* Branch Table */}
+          <div className="card shadow-sm p-0 rounded-3 border-0 overflow-hidden">
+            <div className="table-responsive">
+              <table className="table align-middle mb-0">
+                <thead>
+                  <tr style={{ background: "#F8FAFC", color: "#6B7280" }}>
+                    <th className="py-3 ps-4">#</th>
+                    <th className="py-3 cursor-pointer" onClick={() => handleSort("name")}>
+                      Name
+                    </th>
+                    <th className="py-3">Address</th>
+                    <th className="py-3">Contact</th>
+                    <th className="py-3">Status</th>
+                    <th className="py-3">Created At</th>
+                    <th className="py-3 text-center pe-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {showSkeleton
+                    ? Array.from({ length: payload.pageCount }).map((_, i) => (
                         <tr key={i}>
-                          <td className="ps-4"><Skeleton width={20} /></td>
-                          <td><Skeleton width={100} /></td>
-                          <td><Skeleton width={200} /></td>
-                          <td><Skeleton width={150} /></td>
-                          <td><Skeleton width={60} /></td>
-                          <td><Skeleton width={90} /></td>
-                          <td><Skeleton width={90} /></td>
+                          <td className="ps-4 py-3"><Skeleton width={20} /></td>
+                          <td className="py-3"><Skeleton width={100} /></td>
+                          <td className="py-3"><Skeleton width={200} /></td>
+                          <td className="py-3"><Skeleton width={150} /></td>
+                          <td className="py-3"><Skeleton width={60} /></td>
+                          <td className="py-3"><Skeleton width={90} /></td>
+                          <td className="py-3 text-center"><Skeleton width={90} /></td>
                         </tr>
                       ))
-                    ) : list.length > 0 ? (
-                      list.map((branch, i) => (
+                    : list.length > 0
+                    ? list.map((branch, i) => (
                         <tr key={branch._id}>
-                          <td className="ps-4">
-                            {(payload.pageNo - 1) * payload.pageCount + i + 1}
-                          </td>
-                          <td className="fw-semibold text-dark">{branch.branchName}</td>
-                          <td className="text-muted">
+                          <td className="ps-4 py-3">{(payload.pageNo - 1) * payload.pageCount + i + 1}</td>
+                          <td className="py-3 fw-semibold text-dark">{branch.branchName}</td>
+                          <td className="py-3 text-muted">
                             {branch.address}, {branch.city}, {branch.state}, {branch.country}
                           </td>
-                          <td className="text-muted">
+                          <td className="py-3 text-muted">
                             <div>{branch.phone}</div>
                             <div>{branch.contactEmail}</div>
                           </td>
-                          <td>
+                          <td className="py-3">
                             <span
                               className={`badge px-2 py-1 ${
                                 branch.status
@@ -283,107 +275,107 @@ function BranchList() {
                               {branch.status ? "Active" : "Inactive"}
                             </span>
                           </td>
-
-                          <td className="text-muted">
-                            {moment(branch.createdAt).format("YYYY-MM-DD")}
-                          </td>
-                          <td className="text-center pe-4">
-                            <BsEye
-                              size={18}
-                              className="mx-2 text-primary"
-                              style={{ cursor: "pointer" }}
-                              title="View"
-                            />
+                          <td className="py-3 text-muted">{moment(branch.createdAt).format("YYYY-MM-DD")}</td>
+                          <td className="py-3 text-center">
+                            <BsEye size={18} className="mx-2 text-primary" title="View" />
                             <BsPencil
                               size={18}
                               className="mx-2 text-warning"
-                              style={{ cursor: "pointer" }}
                               title="Edit"
                               onClick={() => handleOpenEditModal(branch)}
                             />
                             <BsTrash
                               size={18}
                               className="mx-2 text-danger"
-                              style={{ cursor: "pointer" }}
                               title="Delete"
                               onClick={() => handleDeleteBranch(branch._id)}
                             />
                           </td>
                         </tr>
                       ))
-                    ) : (
-                      <tr>
-                        <td colSpan="7" className="text-center py-4">
-                          <NoRecordFound />
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    : (
+                        <tr>
+                          <td colSpan={7} className="text-center py-4">
+                            <NoRecordFound />
+                          </td>
+                        </tr>
+                      )}
+                </tbody>
+              </table>
             </div>
           </div>
-          
         </div>
 
         {/* Add/Edit Modal */}
         {showModal && (
           <div
-            className="modal fade show d-flex align-items-center justify-content-center"
-            style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+            className="modal-overlay"
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2000,
+              overflowY: "auto",
+              padding: "1rem",
+            }}
           >
-            <div className="modal-dialog modal-md modal-dialog-centered">
-              <div className="modal-content rounded-4 shadow-lg border-0">
-                <div className="modal-header border-0 d-flex justify-content-between">
-                  <h5 className="modal-title fw-semibold">
-                    {editingBranch ? "Edit Branch" : "Add New Branch"}
-                  </h5>
-                  <button type="button" className="btn-close" onClick={handleCloseModal}>
-                    <BsX size={24} />
-                  </button>
-                </div>
-                <div className="modal-body px-4 py-3">
-                  <form>
-                    {[
-                      { name: "name", label: "Branch Name *" },
-                      { name: "address", label: "Address" },
-                      { name: "city", label: "City *" },
-                      { name: "state", label: "State/Province" },
-                      { name: "country", label: "Country *" },
-                      { name: "zipCode", label: "ZIP/Postal Code" },
-                      { name: "contactPhone", label: "Contact Phone" },
-                      { name: "contactEmail", label: "Contact Email" },
-                    ].map((field) => (
-                      <div className="mb-3" key={field.name}>
-                        <label className="form-label mb-1 text-muted fw-normal">
-                          {field.label}
-                        </label>
-                        <input
-                          type="text"
-                          className="form-control"
-                          name={field.name}
-                          value={branchForm[field.name]}
-                          onChange={handleFormChange}
-                        />
-                      </div>
-                    ))}
-                  </form>
-                </div>
-                <div className="modal-footer border-0 d-flex justify-content-end">
-                  <button className="btn btn-light" onClick={handleCloseModal}>
-                    Cancel
-                  </button>
-                  <button
-                    className="btn text-white"
-                    style={{ background: "#16A34A" }}
-                    onClick={handleSaveBranch}
-                  >
-                    Save
-                  </button>
-                </div>
+            <div
+              className="modal-content p-4 rounded-4 bg-white"
+              style={{ width: 364, maxHeight: "90vh", overflowY: "auto" }}
+            >
+              <div className="d-flex justify-content-end mb-3">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/128/9068/9068699.png"
+                  style={{ height: 20, cursor: "pointer" }}
+                  onClick={handleCloseModal}
+                />
               </div>
+
+              <h5 className="mb-4">{editingBranch ? "Edit Branch" : "Add Branch"}</h5>
+
+              {[
+                { name: "branchName", label: "Branch Name *" },
+                { name: "address", label: "Address" },
+                { name: "city", label: "City *" },
+                { name: "state", label: "State/Province" },
+                { name: "country", label: "Country *" },
+                { name: "zipcode", label: "ZIP/Postal Code" },
+                { name: "phone", label: "Contact Phone" },
+                { name: "email", label: "Contact Email" },
+              ].map((field) => (
+                <div className="mb-3" key={field.name}>
+                  <label className="form-label mb-1 text-muted fw-normal">{field.label}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name={field.name}
+                    value={branchForm[field.name]}
+                    onChange={handleFormChange}
+                  />
+                </div>
+              ))}
+
+              <div className="form-check mb-3">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="status"
+                  name="status"
+                  checked={branchForm.status}
+                  onChange={handleFormChange}
+                />
+                <label className="form-check-label" htmlFor="status">
+                  Active
+                </label>
+              </div>
+
+              <button className="btn btn-success w-100 mt-3" onClick={handleSaveBranch}>
+                {editingBranch ? "Update" : "Submit"}
+              </button>
             </div>
-            <div className="modal-backdrop fade show"></div>
           </div>
         )}
       </div>

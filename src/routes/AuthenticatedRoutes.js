@@ -57,6 +57,10 @@ import PremiumCustomerList from '../Pages/User/PremiumCutomerList';
 import RolesList from '../Pages/User/Role';
 import BranchList from '../Pages/HR Management/Branches';
 import DepartmentList from '../Pages/HR Management/Department';
+import DesignationList from '../Pages/HR Management/Designation';
+import DocumentTypeList from '../Pages/HR Management/DocumentType';
+import EmployeeList from '../Pages/HR Management/Employee';
+import CreateEmployee from '../Pages/HR Management/CreateEmployee';
 
 
 function AuthenticatedRoutes() {
@@ -165,7 +169,10 @@ function AuthenticatedRoutes() {
         {/* HR management  */}
         <Route path='/branch-list' element={<BranchList />} />
         <Route path='/department-list' element={<DepartmentList />} />
-
+        <Route path='/designation-list' element={<DesignationList />} />
+        <Route path='/document-type' element={<DocumentTypeList />} />
+        <Route path='/employee-list' element={<EmployeeList />} />
+        <Route path='/create-employee' element={<CreateEmployee />} />
     </Routes>
   )
 }

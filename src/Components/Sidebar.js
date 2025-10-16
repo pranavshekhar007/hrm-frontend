@@ -51,9 +51,9 @@ function Sidebar({ selectedMenu, selectedItem }) {
         subMenu: [
           { name: "Branches", path: "/branch-list" },
           { name: "Department", path: "/department-list" },
-          // { name: "Designations", path: "/departments-list" },
-          // { name: "Documents Type", path: "/departments-list" },
-          // { name: "Employee", path: "/departments-list" },
+          { name: "Designation", path: "/designation-list" },
+          { name: "Documents Type", path: "/document-type" },
+          { name: "Employee", path: "/employee-list" },
           // { name: "Award Types", path: "/departments-list" },
           // { name: "Awards", path: "/departments-list" },
           // { name: "Promotion", path: "/departments-list" },

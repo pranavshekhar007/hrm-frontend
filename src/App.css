@@ -926,3 +926,45 @@ margin-right: 5px;
   /* This is styled inline in the JS for quick-fix but for production, use a class */
   /* height: 36px; width: 36px; border-radius: 50%; */
 }
+
+
+/* Custom CSS for the Dynamic Toggle Switch */
+.custom-toggle-input {
+  /* Base styles from your inline code, applied via className for ::before access */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 3.5rem;
+  height: 1.75rem;
+  border-radius: 1.75rem;
+  cursor: pointer;
+  background-color: #E0E0E0; /* Default Off color */
+  border: none;
+  position: relative;
+  transition: background-color 0.15s ease-in-out;
+}
+
+/* Styles for the moving Thumb (the ::before element) */
+.custom-toggle-input::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0.25rem; /* Starting position: 4px from the left edge */
+  transform: translateY(-50%);
+  width: 1.25rem; /* Thumb size */
+  height: 1.25rem; /* Thumb size */
+  background-color: white;
+  border-radius: 50%; /* Make it a perfect circle */
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Styles when the switch is ON (checked) */
+.custom-toggle-input:checked {
+  background-color: #16A34A; /* ON color: Green */
+}
+
+/* Move the thumb to the right when checked */
+.custom-toggle-input:checked::before {
+  /* Calculation: width (3.5rem) - padding (0.25rem * 2) - thumb_size (1.25rem) = 1.75rem */
+  transform: translate(1.75rem, -50%); 
+}
