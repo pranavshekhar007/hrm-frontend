@@ -409,12 +409,12 @@ function DesignationList() {
                         </td>
                         <td className="text-center pe-4">
                           {/* View Icon (BsEye) */}
-                          <BsEye
+                          {/* <BsEye
                             size={18}
                             className="mx-2 text-primary"
                             style={{ cursor: "pointer" }}
                             onClick={() => handleViewDesignation(designation)}
-                          />
+                          /> */}
                           {/* Edit Icon (BsPencil) */}
                           <BsPencil
                             size={18}

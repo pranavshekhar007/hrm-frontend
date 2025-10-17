@@ -282,7 +282,11 @@ function UsersList() {
                     placeholder="Search..."
                     value={payload.searchKey}
                     onChange={(e) =>
-                      setPayload({ ...payload, searchKey: e.target.value, pageNo: 1 })
+                      setPayload({
+                        ...payload,
+                        searchKey: e.target.value,
+                        pageNo: 1,
+                      })
                     }
                   />
                   <button
@@ -349,7 +353,10 @@ function UsersList() {
                               <UserAvatar name={u?.name} />
                               <div className="ms-3">
                                 <div className="fw-semibold">{u?.name}</div>
-                                <div className="text-muted" style={{ fontSize: 13 }}>
+                                <div
+                                  className="text-muted"
+                                  style={{ fontSize: 13 }}
+                                >
                                   {u?.email}
                                 </div>
                               </div>
@@ -565,99 +572,99 @@ function UsersList() {
 
         {/* Reset Password Modal */}
         {showResetModal && (
-  <div
-    className="modal-overlay"
-    style={{
-      position: "fixed",
-      inset: 0,
-      backgroundColor: "rgba(0,0,0,0.5)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 3000,
-      overflowY: "auto",
-      padding: "1rem",
-    }}
-  >
-    <div
-      className="modal-content p-4 rounded-4 bg-white"
-      style={{
-        width: 364,
-        maxHeight: "90vh",
-        overflowY: "auto",
-      }}
-    >
-      <div className="d-flex justify-content-end mb-3">
-        <img
-          src="https://cdn-icons-png.flaticon.com/128/9068/9068699.png"
-          style={{ height: 20, cursor: "pointer" }}
-          onClick={handleCloseResetModal}
-        />
-      </div>
+          <div
+            className="modal-overlay"
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 3000,
+              overflowY: "auto",
+              padding: "1rem",
+            }}
+          >
+            <div
+              className="modal-content p-4 rounded-4 bg-white"
+              style={{
+                width: 364,
+                maxHeight: "90vh",
+                overflowY: "auto",
+              }}
+            >
+              <div className="d-flex justify-content-end mb-3">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/128/9068/9068699.png"
+                  style={{ height: 20, cursor: "pointer" }}
+                  onClick={handleCloseResetModal}
+                />
+              </div>
 
-      <h5 className="mb-4">Reset Password for {resetUser?.name}</h5>
+              <h5 className="mb-4">Reset Password for {resetUser?.name}</h5>
 
-      {/* New Password */}
-      <div className="mb-3 position-relative">
-        <label className="form-label mb-1 text-muted fw-normal">
-          New Password <span className="text-danger">*</span>
-        </label>
-        <input
-          className="form-control"
-          type={showNewPass ? "text" : "password"}
-          name="newPassword"
-          value={resetForm.newPassword}
-          onChange={handleResetPasswordChange}
-        />
-        <span
-          style={{
-            position: "absolute",
-            right: 10,
-            top: 34,
-            cursor: "pointer",
-            color: "#6B7280",
-          }}
-          onClick={() => setShowNewPass((prev) => !prev)}
-        >
-          {showNewPass ? <FaEyeSlash /> : <FaEye />}
-        </span>
-      </div>
+              {/* New Password */}
+              <div className="mb-3 position-relative">
+                <label className="form-label mb-1 text-muted fw-normal">
+                  New Password <span className="text-danger">*</span>
+                </label>
+                <input
+                  className="form-control"
+                  type={showNewPass ? "text" : "password"}
+                  name="newPassword"
+                  value={resetForm.newPassword}
+                  onChange={handleResetPasswordChange}
+                />
+                <span
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: 34,
+                    cursor: "pointer",
+                    color: "#6B7280",
+                  }}
+                  onClick={() => setShowNewPass((prev) => !prev)}
+                >
+                  {showNewPass ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
 
-      {/* Confirm Password */}
-      <div className="mb-3 position-relative">
-        <label className="form-label mb-1 text-muted fw-normal">
-          Confirm Password <span className="text-danger">*</span>
-        </label>
-        <input
-          className="form-control"
-          type={showConfirmPass ? "text" : "password"}
-          name="confirmPassword"
-          value={resetForm.confirmPassword}
-          onChange={handleResetPasswordChange}
-        />
-        <span
-          style={{
-            position: "absolute",
-            right: 10,
-            top: 34,
-            cursor: "pointer",
-            color: "#6B7280",
-          }}
-          onClick={() => setShowConfirmPass((prev) => !prev)}
-        >
-          {showConfirmPass ? <FaEyeSlash /> : <FaEye />}
-        </span>
-      </div>
+              {/* Confirm Password */}
+              <div className="mb-3 position-relative">
+                <label className="form-label mb-1 text-muted fw-normal">
+                  Confirm Password <span className="text-danger">*</span>
+                </label>
+                <input
+                  className="form-control"
+                  type={showConfirmPass ? "text" : "password"}
+                  name="confirmPassword"
+                  value={resetForm.confirmPassword}
+                  onChange={handleResetPasswordChange}
+                />
+                <span
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: 34,
+                    cursor: "pointer",
+                    color: "#6B7280",
+                  }}
+                  onClick={() => setShowConfirmPass((prev) => !prev)}
+                >
+                  {showConfirmPass ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
 
-      <button
-        className="btn btn-success w-100 mt-3"
-        onClick={handleSaveResetPassword}
-      >
-        Reset Password
-      </button>
-    </div>
-  </div>
-)}
+              <button
+                className="btn btn-success w-100 mt-3"
+                onClick={handleSaveResetPassword}
+              >
+                Reset Password
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

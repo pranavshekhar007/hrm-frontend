@@ -10,7 +10,6 @@ const getConfig = () => ({
     Authorization: `Bearer ${token}`,
   },
 });
-
 export const getDepartmentListServ = async (formData) => {
   try {
     const response = await axios.post(BASE_URL + "department/list", formData);
@@ -47,6 +46,17 @@ export const deleteDepartmentServ = async (id) => {
     return response;
   } catch (error) {
     console.error("Error deleting department:", error);
+    throw error;
+  }
+};
+
+
+export const getDepartmentsByBranchServ = async (branchId) => {
+  try {
+    const response = await axios.get(BASE_URL + "department/by-branch/" + branchId);
+    return response;
+  } catch (error) {
+    console.error("Error fetching departments by branch:", error);
     throw error;
   }
 };

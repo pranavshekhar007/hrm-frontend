@@ -64,3 +64,13 @@ export const deleteDesignationServ = async (id) => {
     throw error;
   }
 };
+
+export const getDesignationsByDepartmentServ = async (departmentId) => {
+  try {
+    const response = await axios.get(BASE_URL + "designation/by-department/" + departmentId);
+    return response;
+  } catch (error) {
+    console.error("Error fetching designations by department:", error);
+    throw error;
+  }
+};

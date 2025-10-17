@@ -76,6 +76,18 @@ export const resetEmployeePasswordServ = async (formData) => {
   }
 };
 
+export const getEmployeeDetailsServ = async (id) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}employee/details/${id}`,
+    );
+    return response;
+  } catch (error) {
+    console.error("Error fetching employee details:", error);
+    throw error;
+  }
+};
+
 export const deleteEmployeeDocumentServ = async (employeeId, documentTypeId) => {
   try {
     const response = await axios.delete(

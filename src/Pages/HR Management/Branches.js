@@ -277,7 +277,7 @@ function BranchList() {
                           </td>
                           <td className="py-3 text-muted">{moment(branch.createdAt).format("YYYY-MM-DD")}</td>
                           <td className="py-3 text-center">
-                            <BsEye size={18} className="mx-2 text-primary" title="View" />
+                            {/* <BsEye size={18} className="mx-2 text-primary" title="View" /> */}
                             <BsPencil
                               size={18}
                               className="mx-2 text-warning"

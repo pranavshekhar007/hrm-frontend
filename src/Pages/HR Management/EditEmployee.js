@@ -1,52 +1,45 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../../Components/Sidebar";
 import TopNav from "../../Components/TopNav";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Icons
 import { IoCalendarOutline, IoCloudUploadOutline } from "react-icons/io5";
 import { RiAddLine } from "react-icons/ri";
 import { BsTrash } from "react-icons/bs";
 
-// Import your service APIs
-import {
-  getBranchListServ,
-} from "../../services/branch.services";
-import {
-  getDepartmentListServ,
-  getDepartmentsByBranchServ,
-} from "../../services/department.services";
-import {
-  getDesignationListServ,
-  getDesignationsByDepartmentServ,
-} from "../../services/designation.services";
+import { getBranchListServ } from "../../services/branch.services";
+import { getDepartmentsByBranchServ } from "../../services/department.services";
+import { getDesignationsByDepartmentServ } from "../../services/designation.services";
 import { getDocumentTypeListServ } from "../../services/documentType.services";
-import { addEmployeeServ, deleteEmployeeDocumentServ } from "../../services/employee.services";
+import {
+  getEmployeeDetailsServ,
+  updateEmployeeServ,
+  deleteEmployeeDocumentServ,
+} from "../../services/employee.services";
 
 const initialDocument = {
   documentType: "",
   file: null,
   fileName: "No file selected",
   expiryDate: "",
+  _id: null, // to identify existing documents
 };
 
-function CreateEmployee() {
+function EditEmployee() {
   const navigate = useNavigate();
+  const { id } = useParams(); // get employee id from route params
 
-  // Dropdown data from backend
   const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [documentTypes, setDocumentTypes] = useState([]);
 
-  // State for Basic Information
   const [basicInfo, setBasicInfo] = useState({
     fullName: "",
     employeeId: "",
     email: "",
-    password: "",
     phoneNumber: "",
     dob: "",
     gender: "",
@@ -54,7 +47,6 @@ function CreateEmployee() {
     profileImagePreview: null,
   });
 
-  // State for Employment Details
   const [employmentDetails, setEmploymentDetails] = useState({
     branch: "",
     department: "",
@@ -66,7 +58,6 @@ function CreateEmployee() {
     attendancePolicy: "",
   });
 
-  // State for Contact Information
   const [contactInfo, setContactInfo] = useState({
     addressLine1: "",
     addressLine2: "",
@@ -79,7 +70,6 @@ function CreateEmployee() {
     emergencyPhoneNumber: "",
   });
 
-  // State for Banking Information
   const [bankingInfo, setBankingInfo] = useState({
     bankName: "",
     accountHolderName: "",
@@ -89,102 +79,152 @@ function CreateEmployee() {
     taxPayerId: "",
   });
 
-  // Documents (dynamic)
-  const [documents, setDocuments] = useState([ { ...initialDocument } ]);
+  const [documents, setDocuments] = useState([{ ...initialDocument }]);
+  const [loading, setLoading] = useState(true);
 
-  // ========== Fetch initial dropdown data ==========
-
+  // Load initial dropdowns
   useEffect(() => {
-    const fetchInitial = async () => {
+    const fetchDropdowns = async () => {
       try {
-        const branchRes = await getBranchListServ({});
-        const docTypeRes = await getDocumentTypeListServ({});
-        // Depending on your API response shape:
+        const [branchRes, docTypeRes] = await Promise.all([
+          getBranchListServ({}),
+          getDocumentTypeListServ({}),
+        ]);
         setBranches(branchRes.data.data || []);
         setDocumentTypes(docTypeRes.data.data || []);
       } catch (err) {
-        toast.error(
-                err?.response?.data?.message
-                  ? err?.response?.data?.message
-                  : "Failed to load initial data"
-              );
+        toast.error("Failed to load dropdown data");
       }
     };
-    fetchInitial();
+    fetchDropdowns();
   }, []);
 
-  // ========== Watch branch selection to load departments ==========
+  // Fetch employee details
+  useEffect(() => {
+    const fetchEmployee = async () => {
+      try {
+        const res = await getEmployeeDetailsServ(id);
+        const emp = res.data.data;
 
+        // Basic Info
+        setBasicInfo({
+          fullName: emp.fullName || "",
+          employeeId: emp.employeeId || "",
+          email: emp.email || "",
+          phoneNumber: emp.phoneNumber || "",
+          dob: emp.dob ? emp.dob.split("T")[0] : "",
+          gender: emp.gender || "",
+          profileImageFile: null,
+          profileImagePreview: emp.profileImage || null,
+        });
+
+        // Employment Details
+        setEmploymentDetails({
+          branch: emp.branch?._id || "",
+          department: emp.department?._id || "",
+          designation: emp.designation?._id || "",
+          dateOfJoining: emp.dateOfJoining
+            ? emp.dateOfJoining.split("T")[0]
+            : "",
+          employmentType: emp.employmentType || "FullTime",
+          employmentStatus: emp.employmentStatus || "Active",
+          shift: emp.shift || "",
+          attendancePolicy: emp.attendancePolicy || "",
+        });
+
+        // Contact Info
+        setContactInfo({
+          addressLine1: emp.addressLine1 || "",
+          addressLine2: emp.addressLine2 || "",
+          city: emp.city || "",
+          state: emp.state || "",
+          country: emp.country || "",
+          zipCode: emp.zipCode || "",
+          emergencyName: emp.emergencyName || "",
+          relationship: emp.relationship || "",
+          emergencyPhoneNumber: emp.emergencyPhoneNumber || "",
+        });
+
+        // Banking Info
+        setBankingInfo({
+          bankName: emp.bankName || "",
+          accountHolderName: emp.accountHolderName || "",
+          accountNumber: emp.accountNumber || "",
+          bankIdentifierCode: emp.bankIdentifierCode || "",
+          bankBranch: emp.bankBranch || "",
+          taxPayerId: emp.taxPayerId || "",
+        });
+
+        // Documents
+        setDocuments(
+          emp.documents?.length
+            ? emp.documents.map((d) => ({
+                _id: d._id,
+                documentType: d.documentType?._id || "",
+                expiryDate: d.expiryDate ? d.expiryDate.split("T")[0] : "",
+                file: null,
+                fileName: d.documentName || "Uploaded file",
+              }))
+            : [{ ...initialDocument }]
+        );
+
+        setLoading(false);
+      } catch (err) {
+        toast.error("Failed to load employee details");
+        navigate("/employee-list");
+      }
+    };
+    fetchEmployee();
+  }, [id, navigate]);
+
+  // Auto-fetch departments/designations
   useEffect(() => {
     const fetchDepts = async () => {
-      if (!employmentDetails.branch) {
-        setDepartments([]);
-        setEmploymentDetails(prev => ({ ...prev, department: "", designation: "" }));
-        return;
-      }
-      try {
+      if (employmentDetails.branch) {
         const res = await getDepartmentsByBranchServ(employmentDetails.branch);
         setDepartments(res.data.data || []);
-      } catch (err) {
-        toast.error(
-          err?.response?.data?.message
-            ? err?.response?.data?.message
-            : "Failed to load departments"
-        );
       }
     };
     fetchDepts();
   }, [employmentDetails.branch]);
 
-  // ========== Watch department selection to load designations ==========
-
   useEffect(() => {
     const fetchDesigs = async () => {
-      if (!employmentDetails.department) {
-        setDesignations([]);
-        setEmploymentDetails(prev => ({ ...prev, designation: "" }));
-        return;
-      }
-      try {
-        const res = await getDesignationsByDepartmentServ(employmentDetails.department);
-        setDesignations(res.data.data || []);
-      } catch (err) {
-        toast.error(
-          err?.response?.data?.message
-            ? err?.response?.data?.message
-            : "Failed to load designations"
+      if (employmentDetails.department) {
+        const res = await getDesignationsByDepartmentServ(
+          employmentDetails.department
         );
+        setDesignations(res.data.data || []);
       }
     };
     fetchDesigs();
   }, [employmentDetails.department]);
 
-  // ========== Handlers ==========
-
   const handleChange = (section, e) => {
     const { name, value, files } = e.target;
-
     if (section === "basicInfo" && name === "profileImageFile") {
       const file = files?.[0];
-      setBasicInfo(prev => ({
+      setBasicInfo((prev) => ({
         ...prev,
         profileImageFile: file || null,
-        profileImagePreview: file ? URL.createObjectURL(file) : null,
+        profileImagePreview: file
+          ? URL.createObjectURL(file)
+          : prev.profileImagePreview,
       }));
     } else if (section === "basicInfo") {
-      setBasicInfo(prev => ({ ...prev, [name]: value }));
+      setBasicInfo((prev) => ({ ...prev, [name]: value }));
     } else if (section === "employmentDetails") {
-      setEmploymentDetails(prev => ({ ...prev, [name]: value }));
+      setEmploymentDetails((prev) => ({ ...prev, [name]: value }));
     } else if (section === "contactInfo") {
-      setContactInfo(prev => ({ ...prev, [name]: value }));
+      setContactInfo((prev) => ({ ...prev, [name]: value }));
     } else if (section === "bankingInfo") {
-      setBankingInfo(prev => ({ ...prev, [name]: value }));
+      setBankingInfo((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleDocumentChange = (index, e) => {
     const { name, value, files } = e.target;
-    setDocuments(prevDocs =>
+    setDocuments((prevDocs) =>
       prevDocs.map((doc, i) => {
         if (i !== index) return doc;
         if (name === "file") {
@@ -200,68 +240,67 @@ function CreateEmployee() {
     );
   };
 
+  const handleRemoveDocument = async (index, documentId) => {
+    if (documentId) {
+      try {
+        await deleteEmployeeDocumentServ(id, documentId);
+        toast.success("Document deleted successfully");
+      } catch {
+        toast.error("Failed to delete document");
+      }
+    }
+    setDocuments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleAddDocument = () => {
-    setDocuments(prev => [...prev, { ...initialDocument }]);
+    setDocuments((prev) => [...prev, { ...initialDocument }]);
   };
 
-  const handleRemoveDocument = (index) => {
-    setDocuments(prev => prev.filter((_, i) => i !== index));
-  };
-
-  // ========== Submit Handler ==========
-
-  const handleSaveEmployee = async (e) => {
+  const handleUpdateEmployee = async (e) => {
     e.preventDefault();
-  
+
     try {
       const formData = new FormData();
-  
-      // Append basicInfo
+
       Object.entries(basicInfo).forEach(([key, val]) => {
-        if (key === "profileImageFile") {
-          if (val) formData.append("profileImage", val);
+        if (key === "profileImageFile" && val) {
+          formData.append("profileImage", val);
         } else if (key !== "profileImagePreview") {
           formData.append(key, val ?? "");
         }
       });
-  
-      // Append employmentDetails
+
       Object.entries(employmentDetails).forEach(([key, val]) => {
         formData.append(key, val ?? "");
       });
-  
-      // Append contactInfo
+
       Object.entries(contactInfo).forEach(([key, val]) => {
         formData.append(key, val ?? "");
       });
-  
-      // Append bankingInfo
+
       Object.entries(bankingInfo).forEach(([key, val]) => {
         formData.append(key, val ?? "");
       });
-  
-      // ----- Documents -----
-      // Combine metadata as a single array
-      const documentsMeta = documents.map(doc => ({
+
+      const documentsMeta = documents.map((doc) => ({
+        _id: doc._id || null,
         documentType: doc.documentType,
         expiryDate: doc.expiryDate,
       }));
       formData.append("documentsData", JSON.stringify(documentsMeta));
-  
-      // Append all files under the same field "documents"
-      documents.forEach(doc => {
+      documents.forEach((doc) => {
         if (doc.file) formData.append("documents", doc.file);
       });
-  
-      const res = await addEmployeeServ(formData);
-      toast.success("Employee created successfully!");
+
+      const res = await updateEmployeeServ({ id, formData });
+      toast.success("Employee updated successfully!");
       navigate("/employee-list");
     } catch (err) {
-      console.error("Error creating employee:", err);
-      toast.error(err.response?.data?.message || "Failed to save employee");
+      toast.error(err.response?.data?.message || "Failed to update employee");
     }
   };
-  
+
+  if (loading) return <div className="p-5 text-center">Loading...</div>;
 
   return (
     <div className="bodyContainer">
@@ -270,13 +309,17 @@ function CreateEmployee() {
         <TopNav />
         <div className="p-lg-4 p-md-3 p-2">
           <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
-            <h3 className="fw-semibold mb-0">Create Employee</h3>
-            <Link to="/employee-list" className="btn btn-outline-secondary d-flex align-items-center">
-              <span className="material-icons-outlined me-2">&#x2190;</span> Back to Employees
+            <h3 className="fw-semibold mb-0">Edit Employee</h3>
+            <Link
+              to="/employee-list"
+              className="btn btn-outline-secondary d-flex align-items-center"
+            >
+              <span className="material-icons-outlined me-2">&#x2190;</span>{" "}
+              Back to Employees
             </Link>
           </div>
 
-          <form onSubmit={handleSaveEmployee}>
+          <form onSubmit={handleUpdateEmployee}>
             {/* Basic Info Card */}
             <div className="card shadow-sm p-4 mb-4 rounded-3 border-0">
               <h4 className="fw-bold mb-4">Basic Information</h4>
@@ -291,11 +334,14 @@ function CreateEmployee() {
                     name="fullName"
                     className="form-control"
                     value={basicInfo.fullName}
-                    onChange={e => handleChange("basicInfo", e)}
+                    onChange={(e) => handleChange("basicInfo", e)}
                   />
                 </div>
                 <div className="col-md-6">
-                  <label htmlFor="employeeId" className="form-label fw-semibold">
+                  <label
+                    htmlFor="employeeId"
+                    className="form-label fw-semibold"
+                  >
                     Employee ID <span className="text-danger">*</span>
                   </label>
                   <input
@@ -304,7 +350,7 @@ function CreateEmployee() {
                     name="employeeId"
                     className="form-control"
                     value={basicInfo.employeeId}
-                    onChange={e => handleChange("basicInfo", e)}
+                    onChange={(e) => handleChange("basicInfo", e)}
                   />
                 </div>
                 <div className="col-md-6">
@@ -317,7 +363,7 @@ function CreateEmployee() {
                     name="email"
                     className="form-control"
                     value={basicInfo.email}
-                    onChange={e => handleChange("basicInfo", e)}
+                    onChange={(e) => handleChange("basicInfo", e)}
                   />
                 </div>
                 <div className="col-md-6">
@@ -330,11 +376,14 @@ function CreateEmployee() {
                     name="password"
                     className="form-control"
                     value={basicInfo.password}
-                    onChange={e => handleChange("basicInfo", e)}
+                    onChange={(e) => handleChange("basicInfo", e)}
                   />
                 </div>
                 <div className="col-md-6">
-                  <label htmlFor="phoneNumber" className="form-label fw-semibold">
+                  <label
+                    htmlFor="phoneNumber"
+                    className="form-label fw-semibold"
+                  >
                     Phone Number
                   </label>
                   <input
@@ -343,7 +392,7 @@ function CreateEmployee() {
                     name="phoneNumber"
                     className="form-control"
                     value={basicInfo.phoneNumber}
-                    onChange={e => handleChange("basicInfo", e)}
+                    onChange={(e) => handleChange("basicInfo", e)}
                   />
                 </div>
                 <div className="col-md-6">
@@ -357,7 +406,7 @@ function CreateEmployee() {
                       name="dob"
                       className="form-control"
                       value={basicInfo.dob}
-                      onChange={e => handleChange("basicInfo", e)}
+                      onChange={(e) => handleChange("basicInfo", e)}
                     />
                     <span className="input-group-text">
                       <IoCalendarOutline size={18} />
@@ -367,7 +416,7 @@ function CreateEmployee() {
                 <div className="col-md-6">
                   <label className="form-label fw-semibold">Gender</label>
                   <div className="d-flex gap-4">
-                    {["Male", "Female", "Other"].map(g => (
+                    {["Male", "Female", "Other"].map((g) => (
                       <div className="form-check" key={g}>
                         <input
                           className="form-check-input"
@@ -376,7 +425,7 @@ function CreateEmployee() {
                           id={g}
                           value={g}
                           checked={basicInfo.gender === g}
-                          onChange={e => handleChange("basicInfo", e)}
+                          onChange={(e) => handleChange("basicInfo", e)}
                         />
                         <label className="form-check-label" htmlFor={g}>
                           {g}
@@ -386,15 +435,24 @@ function CreateEmployee() {
                   </div>
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label fw-semibold">Profile Image</label>
-                  <div className="card p-3 border-0" style={{ backgroundColor: "#F8FAFC" }}>
+                  <label className="form-label fw-semibold">
+                    Profile Image
+                  </label>
+                  <div
+                    className="card p-3 border-0"
+                    style={{ backgroundColor: "#F8FAFC" }}
+                  >
                     <div className="d-flex flex-column align-items-center justify-content-center mb-3">
                       {basicInfo.profileImagePreview ? (
                         <img
                           src={basicInfo.profileImagePreview}
                           alt="Profile Preview"
                           className="rounded-circle mb-2"
-                          style={{ width: "80px", height: "80px", objectFit: "cover" }}
+                          style={{
+                            width: "80px",
+                            height: "80px",
+                            objectFit: "cover",
+                          }}
                         />
                       ) : (
                         <div
@@ -409,8 +467,13 @@ function CreateEmployee() {
                           Image
                         </div>
                       )}
-                      <div className="text-muted" style={{ fontSize: "0.9rem" }}>
-                        {basicInfo.profileImageFile ? basicInfo.profileImageFile.name : "No image selected"}
+                      <div
+                        className="text-muted"
+                        style={{ fontSize: "0.9rem" }}
+                      >
+                        {basicInfo.profileImageFile
+                          ? basicInfo.profileImageFile.name
+                          : "No image selected"}
                       </div>
                     </div>
                     <div className="input-group">
@@ -418,16 +481,24 @@ function CreateEmployee() {
                         type="text"
                         className="form-control"
                         placeholder="Select profile image..."
-                        value={basicInfo.profileImageFile ? basicInfo.profileImageFile.name : ""}
+                        value={
+                          basicInfo.profileImageFile
+                            ? basicInfo.profileImageFile.name
+                            : ""
+                        }
                         readOnly
                       />
-                      <label className="btn btn-outline-secondary" style={{ cursor: "pointer" }}>
-                        <IoCloudUploadOutline size={18} className="me-2" /> Browse
+                      <label
+                        className="btn btn-outline-secondary"
+                        style={{ cursor: "pointer" }}
+                      >
+                        <IoCloudUploadOutline size={18} className="me-2" />{" "}
+                        Browse
                         <input
                           type="file"
                           name="profileImageFile"
                           accept="image/*"
-                          onChange={e => handleChange("basicInfo", e)}
+                          onChange={(e) => handleChange("basicInfo", e)}
                           hidden
                         />
                       </label>
@@ -450,10 +521,10 @@ function CreateEmployee() {
                     name="branch"
                     className="form-select"
                     value={employmentDetails.branch}
-                    onChange={e => handleChange("employmentDetails", e)}
+                    onChange={(e) => handleChange("employmentDetails", e)}
                   >
                     <option value="">Select Branch</option>
-                    {branches.map(b => (
+                    {branches.map((b) => (
                       <option key={b._id} value={b._id}>
                         {b.branchName || b.name}
                       </option>
@@ -461,7 +532,10 @@ function CreateEmployee() {
                   </select>
                 </div>
                 <div className="col-md-6">
-                  <label htmlFor="department" className="form-label fw-semibold">
+                  <label
+                    htmlFor="department"
+                    className="form-label fw-semibold"
+                  >
                     Department
                   </label>
                   <select
@@ -470,10 +544,10 @@ function CreateEmployee() {
                     className="form-select"
                     disabled={!employmentDetails.branch}
                     value={employmentDetails.department}
-                    onChange={e => handleChange("employmentDetails", e)}
+                    onChange={(e) => handleChange("employmentDetails", e)}
                   >
                     <option value="">Select Department</option>
-                    {departments.map(d => (
+                    {departments.map((d) => (
                       <option key={d._id} value={d._id}>
                         {d.name}
                       </option>
@@ -481,7 +555,10 @@ function CreateEmployee() {
                   </select>
                 </div>
                 <div className="col-md-6">
-                  <label htmlFor="designation" className="form-label fw-semibold">
+                  <label
+                    htmlFor="designation"
+                    className="form-label fw-semibold"
+                  >
                     Designation
                   </label>
                   <select
@@ -490,10 +567,10 @@ function CreateEmployee() {
                     className="form-select"
                     disabled={!employmentDetails.department}
                     value={employmentDetails.designation}
-                    onChange={e => handleChange("employmentDetails", e)}
+                    onChange={(e) => handleChange("employmentDetails", e)}
                   >
                     <option value="">Select Designation</option>
-                    {designations.map(ds => (
+                    {designations.map((ds) => (
                       <option key={ds._id} value={ds._id}>
                         {ds.name}
                       </option>
@@ -501,7 +578,10 @@ function CreateEmployee() {
                   </select>
                 </div>
                 <div className="col-md-6">
-                  <label htmlFor="dateOfJoining" className="form-label fw-semibold">
+                  <label
+                    htmlFor="dateOfJoining"
+                    className="form-label fw-semibold"
+                  >
                     Date Of Joining <span className="text-danger">*</span>
                   </label>
                   <div className="input-group">
@@ -511,7 +591,7 @@ function CreateEmployee() {
                       name="dateOfJoining"
                       className="form-control"
                       value={employmentDetails.dateOfJoining}
-                      onChange={e => handleChange("employmentDetails", e)}
+                      onChange={(e) => handleChange("employmentDetails", e)}
                     />
                     <span className="input-group-text">
                       <IoCalendarOutline size={18} />
@@ -519,7 +599,10 @@ function CreateEmployee() {
                   </div>
                 </div>
                 <div className="col-md-6">
-                  <label htmlFor="employmentType" className="form-label fw-semibold">
+                  <label
+                    htmlFor="employmentType"
+                    className="form-label fw-semibold"
+                  >
                     Employment Type
                   </label>
                   <select
@@ -527,9 +610,15 @@ function CreateEmployee() {
                     name="employmentType"
                     className="form-select"
                     value={employmentDetails.employmentType}
-                    onChange={e => handleChange("employmentDetails", e)}
+                    onChange={(e) => handleChange("employmentDetails", e)}
                   >
-                    {["FullTime", "PartTime", "Contract", "Internship", "Temporary"].map(type => (
+                    {[
+                      "FullTime",
+                      "PartTime",
+                      "Contract",
+                      "Internship",
+                      "Temporary",
+                    ].map((type) => (
                       <option key={type} value={type}>
                         {type}
                       </option>
@@ -537,7 +626,10 @@ function CreateEmployee() {
                   </select>
                 </div>
                 <div className="col-md-6">
-                  <label htmlFor="employmentStatus" className="form-label fw-semibold">
+                  <label
+                    htmlFor="employmentStatus"
+                    className="form-label fw-semibold"
+                  >
                     Employment Status
                   </label>
                   <select
@@ -545,13 +637,15 @@ function CreateEmployee() {
                     name="employmentStatus"
                     className="form-select"
                     value={employmentDetails.employmentStatus}
-                    onChange={e => handleChange("employmentDetails", e)}
+                    onChange={(e) => handleChange("employmentDetails", e)}
                   >
-                    {["Active", "Inactive", "Probation", "Terminated"].map(status => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
+                    {["Active", "Inactive", "Probation", "Terminated"].map(
+                      (status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      )
+                    )}
                   </select>
                 </div>
                 <div className="col-md-6">
@@ -563,14 +657,14 @@ function CreateEmployee() {
                     name="shift"
                     className="form-select"
                     value={employmentDetails.shift}
-                    onChange={e => handleChange("employmentDetails", e)}
+                    onChange={(e) => handleChange("employmentDetails", e)}
                   >
                     <option value="">Select Shift</option>
                     {[
                       "Morning Shift (09:00 - 18:00)",
                       "Evening Shift (14:00 - 23:00)",
                       "Night Shift (22:00 - 07:00)",
-                    ].map(shift => (
+                    ].map((shift) => (
                       <option key={shift} value={shift}>
                         {shift}
                       </option>
@@ -578,7 +672,10 @@ function CreateEmployee() {
                   </select>
                 </div>
                 <div className="col-md-6">
-                  <label htmlFor="attendancePolicy" className="form-label fw-semibold">
+                  <label
+                    htmlFor="attendancePolicy"
+                    className="form-label fw-semibold"
+                  >
                     Attendance Policy
                   </label>
                   <select
@@ -586,14 +683,14 @@ function CreateEmployee() {
                     name="attendancePolicy"
                     className="form-select"
                     value={employmentDetails.attendancePolicy}
-                    onChange={e => handleChange("employmentDetails", e)}
+                    onChange={(e) => handleChange("employmentDetails", e)}
                   >
                     <option value="">Select Policy</option>
                     {[
                       "Standard Attendance Policy",
                       "Flexible Attendance Policy",
                       "Strict Attendance Policy",
-                    ].map(policy => (
+                    ].map((policy) => (
                       <option key={policy} value={policy}>
                         {policy}
                       </option>
@@ -625,7 +722,7 @@ function CreateEmployee() {
                       name={name}
                       className="form-control"
                       value={contactInfo[name]}
-                      onChange={e => handleChange("contactInfo", e)}
+                      onChange={(e) => handleChange("contactInfo", e)}
                     />
                   </div>
                 ))}
@@ -647,7 +744,7 @@ function CreateEmployee() {
                       name={name}
                       className="form-control"
                       value={contactInfo[name]}
-                      onChange={e => handleChange("contactInfo", e)}
+                      onChange={(e) => handleChange("contactInfo", e)}
                     />
                   </div>
                 ))}
@@ -662,7 +759,10 @@ function CreateEmployee() {
                   { name: "bankName", label: "Bank Name" },
                   { name: "accountHolderName", label: "Account Holder Name" },
                   { name: "accountNumber", label: "Account Number" },
-                  { name: "bankIdentifierCode", label: "Bank Identifier Code (BIC/SWIFT)" },
+                  {
+                    name: "bankIdentifierCode",
+                    label: "Bank Identifier Code (BIC/SWIFT)",
+                  },
                   { name: "bankBranch", label: "Bank Branch" },
                   { name: "taxPayerId", label: "Tax Payer ID" },
                 ].map(({ name, label }) => (
@@ -676,7 +776,7 @@ function CreateEmployee() {
                       name={name}
                       className="form-control"
                       value={bankingInfo[name]}
-                      onChange={e => handleChange("bankingInfo", e)}
+                      onChange={(e) => handleChange("bankingInfo", e)}
                     />
                   </div>
                 ))}
@@ -712,10 +812,10 @@ function CreateEmployee() {
                         className="form-select"
                         name="documentType"
                         value={doc.documentType}
-                        onChange={e => handleDocumentChange(index, e)}
+                        onChange={(e) => handleDocumentChange(index, e)}
                       >
                         <option value="">Select Document Type</option>
-                        {documentTypes.map(dt => (
+                        {documentTypes.map((dt) => (
                           <option key={dt._id} value={dt._id}>
                             {dt.name}
                           </option>
@@ -734,26 +834,32 @@ function CreateEmployee() {
                           value={doc.fileName}
                           readOnly
                         />
-                        <label className="btn btn-outline-secondary" style={{ cursor: "pointer" }}>
-                          <IoCloudUploadOutline size={18} className="me-2" /> Browse
+                        <label
+                          className="btn btn-outline-secondary"
+                          style={{ cursor: "pointer" }}
+                        >
+                          <IoCloudUploadOutline size={18} className="me-2" />{" "}
+                          Browse
                           <input
                             type="file"
                             name="file"
-                            onChange={e => handleDocumentChange(index, e)}
+                            onChange={(e) => handleDocumentChange(index, e)}
                             hidden
                           />
                         </label>
                       </div>
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label fw-semibold">Expiry Date</label>
+                      <label className="form-label fw-semibold">
+                        Expiry Date
+                      </label>
                       <div className="input-group">
                         <input
                           type="date"
                           name="expiryDate"
                           className="form-control"
                           value={doc.expiryDate}
-                          onChange={e => handleDocumentChange(index, e)}
+                          onChange={(e) => handleDocumentChange(index, e)}
                         />
                         <span className="input-group-text">
                           <IoCalendarOutline size={18} />
@@ -792,4 +898,4 @@ function CreateEmployee() {
   );
 }
 
-export default CreateEmployee;
+export default EditEmployee;

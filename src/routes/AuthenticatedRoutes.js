@@ -61,6 +61,7 @@ import DesignationList from '../Pages/HR Management/Designation';
 import DocumentTypeList from '../Pages/HR Management/DocumentType';
 import EmployeeList from '../Pages/HR Management/Employee';
 import CreateEmployee from '../Pages/HR Management/CreateEmployee';
+import EditEmployee from '../Pages/HR Management/EditEmployee';
 
 
 function AuthenticatedRoutes() {
@@ -173,6 +174,7 @@ function AuthenticatedRoutes() {
         <Route path='/document-type' element={<DocumentTypeList />} />
         <Route path='/employee-list' element={<EmployeeList />} />
         <Route path='/create-employee' element={<CreateEmployee />} />
+        <Route path='/edit-employee/:id' element={<EditEmployee />} />
     </Routes>
   )
 }
