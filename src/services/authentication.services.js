@@ -16,10 +16,11 @@ const getConfig = () => {
 
 export const loginServ = async (formData) => {
   try {
-    const response = await axios.post(`${BASE_URL}admin/login`, formData);
-    return response.data;
+    const response = await axios.post(BASE_URL + "admin/login", formData);
+    return response;
   } catch (error) {
-    console.error("Login error:", error.response?.data || error.message);
+    // Handle error (e.g., log or throw an error)
+    console.error("Error fetching data:", error);
     throw error;
   }
 };

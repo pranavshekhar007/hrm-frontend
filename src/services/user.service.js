@@ -104,11 +104,12 @@ export const getUserDetailsServ = async (id) => {
 // ✅ Dashboard Overview
 export const dashboardDetailsServ = async () => {
   try {
-    const res = await axios.get(`${BASE_URL}user/dashboard-details`);
-    return res.data;
-  } catch (err) {
-    console.error("Error fetching dashboard details:", err);
-    throw err.response?.data || err;
+    const response = await axios.get(BASE_URL + "user/dashboard-details");
+    return response;
+  } catch (error) {
+    // Handle error (e.g., log or throw an error)
+    console.error("Error fetching data:", error);
+    throw error;
   }
 };
 
