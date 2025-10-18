@@ -5,9 +5,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-import { IoCalendarOutline, IoCloudUploadOutline } from "react-icons/io5";
+import { IoCalendarOutline, IoCloudUploadOutline, IoAdd } from "react-icons/io5";
 import { RiAddLine } from "react-icons/ri";
 import { BsTrash } from "react-icons/bs";
+import { FaPlus } from "react-icons/fa"; // Using FaPlus for the simple plus icon
 
 import { getBranchListServ } from "../../services/branch.services";
 import { getDepartmentsByBranchServ } from "../../services/department.services";
@@ -24,12 +25,12 @@ const initialDocument = {
   file: null,
   fileName: "No file selected",
   expiryDate: "",
-  _id: null, // to identify existing documents
+  _id: null,
 };
 
 function EditEmployee() {
   const navigate = useNavigate();
-  const { id } = useParams(); // get employee id from route params
+  const { id } = useParams();
 
   const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -79,10 +80,9 @@ function EditEmployee() {
     taxPayerId: "",
   });
 
-  const [documents, setDocuments] = useState([{ ...initialDocument }]);
+  const [documents, setDocuments] = useState([]); 
   const [loading, setLoading] = useState(true);
 
-  // Load initial dropdowns
   useEffect(() => {
     const fetchDropdowns = async () => {
       try {
@@ -99,14 +99,12 @@ function EditEmployee() {
     fetchDropdowns();
   }, []);
 
-  // Fetch employee details
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
         const res = await getEmployeeDetailsServ(id);
         const emp = res.data.data;
 
-        // Basic Info
         setBasicInfo({
           fullName: emp.fullName || "",
           employeeId: emp.employeeId || "",
@@ -118,7 +116,6 @@ function EditEmployee() {
           profileImagePreview: emp.profileImage || null,
         });
 
-        // Employment Details
         setEmploymentDetails({
           branch: emp.branch?._id || "",
           department: emp.department?._id || "",
@@ -132,7 +129,6 @@ function EditEmployee() {
           attendancePolicy: emp.attendancePolicy || "",
         });
 
-        // Contact Info
         setContactInfo({
           addressLine1: emp.addressLine1 || "",
           addressLine2: emp.addressLine2 || "",
@@ -145,7 +141,6 @@ function EditEmployee() {
           emergencyPhoneNumber: emp.emergencyPhoneNumber || "",
         });
 
-        // Banking Info
         setBankingInfo({
           bankName: emp.bankName || "",
           accountHolderName: emp.accountHolderName || "",
@@ -155,17 +150,17 @@ function EditEmployee() {
           taxPayerId: emp.taxPayerId || "",
         });
 
-        // Documents
         setDocuments(
           emp.documents?.length
             ? emp.documents.map((d) => ({
                 _id: d._id,
                 documentType: d.documentType?._id || "",
                 expiryDate: d.expiryDate ? d.expiryDate.split("T")[0] : "",
-                file: null,
-                fileName: d.documentName || "Uploaded file",
+                file: null, 
+                fileName: d.documentName || "Uploaded file", 
+                status: d.status || (d.expiryDate ? (new Date(d.expiryDate) < new Date() ? "Expired" : "Verified") : "Verified")
               }))
-            : [{ ...initialDocument }]
+            : [] 
         );
 
         setLoading(false);
@@ -177,7 +172,6 @@ function EditEmployee() {
     fetchEmployee();
   }, [id, navigate]);
 
-  // Auto-fetch departments/designations
   useEffect(() => {
     const fetchDepts = async () => {
       if (employmentDetails.branch) {
@@ -232,7 +226,7 @@ function EditEmployee() {
           return {
             ...doc,
             file,
-            fileName: file ? file.name : "No file selected",
+            fileName: file ? file.name : doc.fileName, 
           };
         }
         return { ...doc, [name]: value };
@@ -243,24 +237,51 @@ function EditEmployee() {
   const handleRemoveDocument = async (index, documentId) => {
     if (documentId) {
       try {
-        await deleteEmployeeDocumentServ(id, documentId);
-        toast.success("Document deleted successfully");
-      } catch {
-        toast.error("Failed to delete document");
+        const documentTypeId = documents[index]?.documentType;
+        
+        if (documentTypeId) {
+            await deleteEmployeeDocumentServ(id, documentTypeId);
+            toast.success("Document deleted successfully");
+        } else {
+             toast.error("Cannot delete document. Document Type ID missing.");
+             return;
+        }
+
+      } catch (err) {
+        toast.error("Failed to delete document from server.");
+        return; 
       }
     }
+
     setDocuments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleAddDocument = () => {
-    setDocuments((prev) => [...prev, { ...initialDocument }]);
+    const hasUnsavedDocument = documents.some(doc => !doc._id && !doc.file && !doc.documentType);
+    if(hasUnsavedDocument){
+        toast.info("Please fill or remove the existing 'New Document' field first.");
+        return;
+    }
+
+    setDocuments((prev) => [...prev, { ...initialDocument, fileName: "No file selected" }]); 
   };
+  
+  // NOTE: This placeholder function is for the new existing document button logic 
+  // where the user clicks '+' on an existing document to upload a new version.
+  const handleReplaceFileClick = (docId) => {
+      // Find the hidden file input corresponding to this docId or index
+      // and programmatically click it to open the file dialog.
+      document.getElementById(`replace-file-${docId}`).click();
+  };
+
 
   const handleUpdateEmployee = async (e) => {
     e.preventDefault();
 
     try {
       const formData = new FormData();
+
+      formData.append("_id", id);
 
       Object.entries(basicInfo).forEach(([key, val]) => {
         if (key === "profileImageFile" && val) {
@@ -282,17 +303,25 @@ function EditEmployee() {
         formData.append(key, val ?? "");
       });
 
-      const documentsMeta = documents.map((doc) => ({
-        _id: doc._id || null,
+      const validDocuments = documents.filter(doc => 
+          doc._id || (doc.documentType && doc.file) 
+      );
+
+      const documentsMeta = validDocuments.map((doc) => ({
+        _id: doc._id || null, 
         documentType: doc.documentType,
         expiryDate: doc.expiryDate,
       }));
+      
       formData.append("documentsData", JSON.stringify(documentsMeta));
-      documents.forEach((doc) => {
-        if (doc.file) formData.append("documents", doc.file);
+      
+      validDocuments.forEach((doc) => {
+        if (doc.file) {
+             formData.append("documents", doc.file); 
+        }
       });
 
-      const res = await updateEmployeeServ({ id, formData });
+      await updateEmployeeServ(formData);
       toast.success("Employee updated successfully!");
       navigate("/employee-list");
     } catch (err) {
@@ -301,6 +330,9 @@ function EditEmployee() {
   };
 
   if (loading) return <div className="p-5 text-center">Loading...</div>;
+
+  const existingDocuments = documents.filter(doc => doc._id);
+  const newDocuments = documents.filter(doc => !doc._id);
 
   return (
     <div className="bodyContainer">
@@ -320,7 +352,7 @@ function EditEmployee() {
           </div>
 
           <form onSubmit={handleUpdateEmployee}>
-            {/* Basic Info Card */}
+            {/* Basic Info Card (Unchanged) */}
             <div className="card shadow-sm p-4 mb-4 rounded-3 border-0">
               <h4 className="fw-bold mb-4">Basic Information</h4>
               <div className="row g-3">
@@ -375,8 +407,7 @@ function EditEmployee() {
                     id="password"
                     name="password"
                     className="form-control"
-                    value={basicInfo.password}
-                    onChange={(e) => handleChange("basicInfo", e)}
+                    placeholder="Leave blank to keep current password"
                   />
                 </div>
                 <div className="col-md-6">
@@ -508,7 +539,7 @@ function EditEmployee() {
               </div>
             </div>
 
-            {/* Employment Details */}
+            {/* Employment Details (Unchanged) */}
             <div className="card shadow-sm p-4 mb-4 rounded-3 border-0">
               <h4 className="fw-bold mb-4">Employment Details</h4>
               <div className="row g-3">
@@ -700,7 +731,7 @@ function EditEmployee() {
               </div>
             </div>
 
-            {/* Contact Information */}
+            {/* Contact Information (Unchanged) */}
             <div className="card shadow-sm p-4 mb-4 rounded-3 border-0">
               <h4 className="fw-bold mb-4">Contact Information</h4>
               <div className="row g-3">
@@ -751,7 +782,7 @@ function EditEmployee() {
               </div>
             </div>
 
-            {/* Banking Information */}
+            {/* Banking Information (Unchanged) */}
             <div className="card shadow-sm p-4 mb-4 rounded-3 border-0">
               <h4 className="fw-bold mb-4">Banking Information</h4>
               <div className="row g-3">
@@ -783,112 +814,208 @@ function EditEmployee() {
               </div>
             </div>
 
-            {/* Documents */}
+            {/* Documents - UPDATED SECTION */}
             <div className="card shadow-sm p-4 mb-4 rounded-3 border-0">
               <h4 className="fw-bold mb-4">Documents</h4>
-              {documents.map((doc, index) => (
-                <div
-                  key={index}
-                  className="border rounded-3 p-3 mb-3"
-                  style={{ backgroundColor: "#F8FAFC" }}
-                >
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h6 className="fw-bold mb-0">Document #{index + 1}</h6>
-                    {documents.length > 1 && (
-                      <BsTrash
-                        size={18}
-                        className="text-danger"
-                        style={{ cursor: "pointer" }}
-                        onClick={() => handleRemoveDocument(index)}
-                      />
-                    )}
-                  </div>
-                  <div className="row g-3">
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">
-                        Document Type <span className="text-danger">*</span>
-                      </label>
-                      <select
-                        className="form-select"
-                        name="documentType"
-                        value={doc.documentType}
-                        onChange={(e) => handleDocumentChange(index, e)}
-                      >
-                        <option value="">Select Document Type</option>
-                        {documentTypes.map((dt) => (
-                          <option key={dt._id} value={dt._id}>
-                            {dt.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">
-                        File <span className="text-danger">*</span>
-                      </label>
-                      <div className="input-group">
-                        <input
-                          type="text"
-                          className="form-control"
-                          placeholder="No file selected"
-                          value={doc.fileName}
-                          readOnly
-                        />
-                        <label
-                          className="btn btn-outline-secondary"
-                          style={{ cursor: "pointer" }}
+              
+              {/* Existing Documents Section */}
+              <h5 className="fw-semibold mb-3">Existing Documents</h5>
+              <div className="row g-3 mb-4">
+                {existingDocuments.length > 0 ? (
+                  existingDocuments.map((doc) => {
+                    const documentTypeName = documentTypes.find(dt => dt._id === doc.documentType)?.name || "Document";
+                    
+                    let status = doc.status || "Pending"; 
+                    let statusColor = "text-warning";
+                    let statusBg = "bg-warning-subtle";
+
+                    if (doc.status === "Verified") {
+                      statusColor = "text-success";
+                      statusBg = "bg-success-subtle";
+                    } else if (doc.status === "Rejected" || doc.status === "Expired") {
+                      statusColor = "text-danger";
+                      statusBg = "bg-danger-subtle";
+                    }
+                    
+                    const masterIndex = documents.findIndex(d => d._id === doc._id);
+
+                    return (
+                      <div className="col-md-6" key={doc._id}>
+                        <div
+                          className="border rounded-3 p-3 d-flex flex-column"
+                          style={{ backgroundColor: "#FFFFFF" }}
                         >
-                          <IoCloudUploadOutline size={18} className="me-2" />{" "}
-                          Browse
-                          <input
-                            type="file"
-                            name="file"
-                            onChange={(e) => handleDocumentChange(index, e)}
-                            hidden
-                          />
-                        </label>
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <h6 className="fw-bold mb-0">{documentTypeName}</h6>
+                            <div className="d-flex gap-2">
+                                {/* Invisible File Input for replacing */}
+                                <input
+                                    type="file"
+                                    name="file" 
+                                    id={`replace-file-${doc._id}`}
+                                    onChange={(e) => handleDocumentChange(masterIndex, e)}
+                                    hidden
+                                />
+                                {/* Plus icon for Replace File */}
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-secondary p-0"
+                                    style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    title="Replace Document File"
+                                    onClick={() => handleReplaceFileClick(doc._id)}
+                                >
+                                    <FaPlus size={12} />
+                                </button>
+                                {/* Delete icon */}
+                                <button
+                                    type="button"
+                                    className="btn btn-sm btn-outline-danger p-0"
+                                    style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    title="Delete Document"
+                                    onClick={() => handleRemoveDocument(masterIndex, doc._id)}
+                                >
+                                    <BsTrash size={14} />
+                                </button>
+                            </div>
+                          </div>
+
+                          {doc.expiryDate ? (
+                            <small className="text-muted mb-1">
+                              Expires: {doc.expiryDate}
+                            </small>
+                          ) : (
+                            <small className="text-muted mb-1">
+                              No expiry date
+                            </small>
+                          )}
+                          <span
+                            className={`badge ${statusBg} ${statusColor}`}
+                            style={{
+                              width: "fit-content",
+                              fontWeight: "600",
+                              padding: "0.3em 0.6em",
+                            }}
+                          >
+                            {status}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label fw-semibold">
-                        Expiry Date
-                      </label>
-                      <div className="input-group">
-                        <input
-                          type="date"
-                          name="expiryDate"
-                          className="form-control"
-                          value={doc.expiryDate}
-                          onChange={(e) => handleDocumentChange(index, e)}
-                        />
-                        <span className="input-group-text">
-                          <IoCalendarOutline size={18} />
-                        </span>
-                      </div>
-                    </div>
+                    );
+                  })
+                ) : (
+                  <div className="col-12">
+                     <p className="text-muted">No existing documents found.</p>
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
+
+              <hr className="my-3" />
+              
+              {/* Add New Documents Section */}
+              <h5 className="fw-semibold mt-4 mb-3">Add New Documents</h5>
+              <div className="row g-3">
+              {newDocuments.map((doc, index) => {
+                const masterIndex = documents.findIndex(d => !d._id && d.fileName === doc.fileName && d.documentType === doc.documentType);
+                
+                return (
+                  <div className="col-12" key={`new-${index}`}>
+                      <div
+                        className="border rounded-3 p-3"
+                        style={{ backgroundColor: "#F8FAFC" }}
+                      >
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <h6 className="fw-bold mb-0">New Document #{index + 1}</h6>
+                          <BsTrash
+                            size={18}
+                            className="text-danger"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleRemoveDocument(masterIndex, null)}
+                          />
+                        </div>
+                        <div className="row g-3">
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold">
+                              Document Type <span className="text-danger">*</span>
+                            </label>
+                            <select
+                              className="form-select"
+                              name="documentType"
+                              value={doc.documentType}
+                              onChange={(e) => handleDocumentChange(masterIndex, e)}
+                            >
+                              <option value="">Select Document Type</option>
+                              {documentTypes.map((dt) => (
+                                <option key={dt._id} value={dt._id}>
+                                  {dt.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold">
+                              File <span className="text-danger">*</span>
+                            </label>
+                            <div className="input-group">
+                              <input
+                                type="text"
+                                className="form-control"
+                                placeholder="No file selected"
+                                value={doc.fileName} 
+                                readOnly 
+                              />
+                              <label
+                                className="btn btn-outline-secondary"
+                                style={{ cursor: "pointer" }}
+                              >
+                                <IoCloudUploadOutline size={18} className="me-2" /> 
+                                Browse
+                                <input
+                                  type="file"
+                                  name="file" 
+                                  onChange={(e) => handleDocumentChange(masterIndex, e)}
+                                  hidden
+                                />
+                              </label>
+                            </div>
+                          </div>
+                          <div className="col-md-6">
+                            <label className="form-label fw-semibold">
+                              Expiry Date
+                            </label>
+                            <div className="input-group">
+                              <input
+                                type="date"
+                                name="expiryDate"
+                                className="form-control"
+                                value={doc.expiryDate}
+                                onChange={(e) => handleDocumentChange(masterIndex, e)}
+                              />
+                              <span className="input-group-text">
+                                <IoCalendarOutline size={18} />
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                  </div>
+                );
+              })}
+              </div>
+
+              {/* Add Document Button */}
               <button
                 type="button"
-                className="btn btn-outline-secondary d-flex align-items-center px-3"
+                className="btn btn-outline-primary d-flex align-items-center mt-3 w-auto"
                 onClick={handleAddDocument}
               >
-                <RiAddLine size={20} className="me-1" /> Add Document
+                <RiAddLine size={20} className="me-2" /> Add Document
               </button>
             </div>
 
-            {/* Action Buttons */}
-            <div className="d-flex justify-content-end gap-2 mt-4">
-              <button
-                type="button"
-                className="btn btn-outline-secondary px-4"
-                onClick={() => navigate("/employee-list")}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-success px-4">
-                Save Employee
+            {/* Submit Button */}
+            <div className="text-end mb-4">
+              <button type="submit" className="btn btn-primary px-5">
+                Update Employee
               </button>
             </div>
           </form>

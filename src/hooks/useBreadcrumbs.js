@@ -41,7 +41,7 @@ const NAV_STRUCTURE = [
         path: "/employee-list",
         childMenu: [
           { name: "Create Employee", path: "/create-employee" },
-          { name: "Edit Employee", path: "/employee-edit/:id" },
+          { name: "Edit Employee", path: "/edit-employee" },
         ],
       },
       {
