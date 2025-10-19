@@ -46,7 +46,7 @@ const NAV_STRUCTURE = [
       },
       {
         name: "Award Types",
-        path: "/award-type-list",
+        path: "/award-type",
        
       },
       {

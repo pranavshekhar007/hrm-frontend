@@ -4,6 +4,8 @@ import TopNav from "../../Components/TopNav";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 import { IoCalendarOutline, IoCloudUploadOutline, IoAdd } from "react-icons/io5";
 import { RiAddLine } from "react-icons/ri";
@@ -329,7 +331,51 @@ function EditEmployee() {
     }
   };
 
-  if (loading) return <div className="p-5 text-center">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="bodyContainer">
+        <Sidebar selectedMenu="Hr Management" selectedItem="Employee" />
+        <div className="mainContainer">
+          <TopNav />
+          <div className="p-4">
+            <h3 className="fw-semibold mb-4">
+              <Skeleton width={250} height={30} />
+            </h3>
+
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="card shadow-sm p-4 mb-4 rounded-3 border-0">
+                <h4 className="fw-bold mb-3">
+                  <Skeleton width={200} />
+                </h4>
+                <div className="row g-3">
+                  {[1, 2, 3, 4, 5, 6].map((f) => (
+                    <div className="col-md-6" key={f}>
+                      <Skeleton height={40} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Skeleton for documents */}
+            <div className="card shadow-sm p-4 mb-4 rounded-3 border-0">
+              <h4 className="fw-bold mb-3">
+                <Skeleton width={180} />
+              </h4>
+              <div className="row g-3">
+                {[1, 2].map((d) => (
+                  <div className="col-md-6" key={d}>
+                    <Skeleton height={100} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   const existingDocuments = documents.filter(doc => doc._id);
   const newDocuments = documents.filter(doc => !doc._id);
