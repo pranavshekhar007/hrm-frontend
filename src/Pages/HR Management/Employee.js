@@ -433,7 +433,7 @@ function EmployeeList() {
                           {moment(employee.dateOfJoining).format("YYYY-MM-DD")}
                         </td>
                         <td className="text-center pe-4">
-                          {/* {canView && (
+                          {canView && (
                             <BsEye
                               size={18}
                               className="mx-1 text-primary"
@@ -442,7 +442,7 @@ function EmployeeList() {
                                 toast.info(`View ${employee.fullName}`)
                               }
                             />
-                          )} */}
+                          )}
                           {canUpdate && (
                             <BsPencil
                               size={18}
