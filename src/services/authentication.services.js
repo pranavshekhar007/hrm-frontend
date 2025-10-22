@@ -2,14 +2,14 @@
 import axios from "axios";
 import { BASE_URL } from "../utils/api_base_url_configration";
 
-// 🔹 Get Axios config with token
+const token = localStorage.getItem("token");
+
 const getConfig = () => {
-  const token = localStorage.getItem("token");
   return {
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": "multipart/form-data",
       Accept: "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${JSON.parse(localStorage.getItem("token"))}`,
     },
   };
 };

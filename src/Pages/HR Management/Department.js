@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import moment from "moment";
 import NoRecordFound from "../../Components/NoRecordFound";
+import { usePermission } from "../../hooks/usePermission";
+import ActionButtons from "../../Components/ActionButtons";
 
 import { BsPencil, BsTrash } from "react-icons/bs";
 import { FaSearch } from "react-icons/fa";
@@ -31,6 +33,9 @@ function DepartmentList() {
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingDepartment, setEditingDepartment] = useState(null);
+
+  const { canView, canCreate, canUpdate, canDelete } =
+      usePermission("Department");
 
   const [payload, setPayload] = useState({
     searchKey: "",
@@ -166,14 +171,16 @@ function DepartmentList() {
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
             <h3 className="fw-semibold mb-0">Department Management</h3>
-            <button
-              className="btn text-white px-3"
-              style={{ background: "#16A34A", borderRadius: "0.5rem" }}
-              onClick={handleOpenAddModal}
-            >
-              <RiAddLine size={20} className="me-1" />
-              Add Department
-            </button>
+            {canCreate && (
+              <button
+                className="btn text-white px-3"
+                style={{ background: "#16A34A", borderRadius: "0.5rem" }}
+                onClick={handleOpenAddModal}
+              >
+                <RiAddLine size={20} className="me-1" />
+                Add Department
+              </button>
+            )}
           </div>
 
           {/* Search */}
@@ -269,17 +276,12 @@ function DepartmentList() {
                           </td>
                           <td>{moment(department.createdAt).format("YYYY-MM-DD")}</td>
                           <td className="text-center pe-4">
-                            <BsPencil
-                              size={18}
-                              className="mx-2 text-warning"
-                              style={{ cursor: "pointer" }}
-                              onClick={() => handleOpenEditModal(department)}
-                            />
-                            <BsTrash
-                              size={18}
-                              className="mx-2 text-danger"
-                              style={{ cursor: "pointer" }}
-                              onClick={() => handleDeleteDepartment(department._id)}
+                            <ActionButtons
+                              // canView={canView}
+                              canUpdate={canUpdate}
+                              canDelete={canDelete}
+                              onEdit={() => handleOpenEditModal(department)}
+                              onDelete={() => handleDeleteDepartment(department._id)}
                             />
                           </td>
                         </tr>

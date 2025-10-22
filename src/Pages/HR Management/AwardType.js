@@ -13,6 +13,8 @@ import { BsPencil, BsTrash, BsEye } from "react-icons/bs";
 import { FaSearch } from "react-icons/fa";
 import { RiAddLine } from "react-icons/ri";
 import { GiTrophy } from "react-icons/gi"; // A suitable icon for Award Type
+import { usePermission } from "../../hooks/usePermission";
+import ActionButtons from "../../Components/ActionButtons";
 
 import {
   getAwardTypeListServ,
@@ -35,6 +37,9 @@ function AwardTypeList() {
     sortByField: "createdAt",
     sortByOrder: "desc",
   });
+
+  const { canView, canCreate, canUpdate, canDelete } =
+    usePermission("Award Types");
 
   const [awardTypeForm, setAwardTypeForm] = useState({
     name: "",
@@ -100,7 +105,10 @@ function AwardTypeList() {
     }
     try {
       if (editingAwardType) {
-        await updateAwardTypeServ({ _id: editingAwardType._id, ...awardTypeForm });
+        await updateAwardTypeServ({
+          _id: editingAwardType._id,
+          ...awardTypeForm,
+        });
         toast.success("Award Type updated successfully!");
       } else {
         await addAwardTypeServ(awardTypeForm);
@@ -121,7 +129,9 @@ function AwardTypeList() {
         toast.success("Award Type deleted successfully!");
         handleGetAwardTypes();
       } catch (err) {
-        toast.error(err?.response?.data?.message || "Failed to delete award type");
+        toast.error(
+          err?.response?.data?.message || "Failed to delete award type"
+        );
       }
     }
   };
@@ -130,7 +140,10 @@ function AwardTypeList() {
     setPayload((prev) => ({
       ...prev,
       sortByField: field,
-      sortByOrder: prev.sortByField === field && prev.sortByOrder === "asc" ? "desc" : "asc",
+      sortByOrder:
+        prev.sortByField === field && prev.sortByOrder === "asc"
+          ? "desc"
+          : "asc",
       pageNo: 1,
     }));
   };
@@ -149,14 +162,17 @@ function AwardTypeList() {
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
             <h3 className="fw-semibold mb-0">Award Type Management</h3>
-            <button
-              className="btn text-white px-3"
-              style={{ background: "#16A34A", borderRadius: "0.5rem" }}
-              onClick={handleOpenAddModal}
-            >
-              <RiAddLine size={20} className="me-1" />
-              Add Award Type
-            </button>
+
+            {canCreate && (
+              <button
+                className="btn text-white px-3"
+                style={{ background: "#16A34A", borderRadius: "0.5rem" }}
+                onClick={handleOpenAddModal}
+              >
+                <RiAddLine size={20} className="me-1" />
+                Add Award Type
+              </button>
+            )}
           </div>
 
           {/* Search */}
@@ -169,7 +185,11 @@ function AwardTypeList() {
                     placeholder="Search by Name..."
                     value={payload.searchKey}
                     onChange={(e) =>
-                      setPayload({ ...payload, searchKey: e.target.value, pageNo: 1 })
+                      setPayload({
+                        ...payload,
+                        searchKey: e.target.value,
+                        pageNo: 1,
+                      })
                     }
                   />
                   <button
@@ -184,13 +204,22 @@ function AwardTypeList() {
 
               <div className="col-lg-4 col-md-4 d-flex justify-content-end">
                 <div className="d-flex align-items-center">
-                  <span className="me-2 text-muted" style={{fontSize: '0.85rem'}}>Per Page:</span>
+                  <span
+                    className="me-2 text-muted"
+                    style={{ fontSize: "0.85rem" }}
+                  >
+                    Per Page:
+                  </span>
                   <select
                     className="form-select"
                     style={{ width: "auto" }}
                     value={payload.pageCount}
                     onChange={(e) =>
-                      setPayload({ ...payload, pageCount: Number(e.target.value), pageNo: 1 })
+                      setPayload({
+                        ...payload,
+                        pageCount: Number(e.target.value),
+                        pageNo: 1,
+                      })
                     }
                   >
                     <option value={10}>10</option>
@@ -209,77 +238,103 @@ function AwardTypeList() {
                 <thead>
                   <tr style={{ background: "#F8FAFC" }}>
                     <th className="ps-4">#</th>
-                    <th onClick={() => handleSort("name")} style={{ cursor: "pointer" }}>
+                    <th
+                      onClick={() => handleSort("name")}
+                      style={{ cursor: "pointer" }}
+                    >
                       Name <GiTrophy size={14} />
                     </th>
                     <th>Description</th>
                     <th>Status</th>
-                    <th onClick={() => handleSort("createdAt")} style={{ cursor: "pointer" }}>
+                    <th
+                      onClick={() => handleSort("createdAt")}
+                      style={{ cursor: "pointer" }}
+                    >
                       Created At
                     </th>
                     <th className="text-center pe-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {showSkeleton
-                    ? Array.from({ length: payload.pageCount }).map((_, i) => (
-                        <tr key={i}>
-                          <td className="ps-4 py-3"><Skeleton width={20} /></td>
-                          <td><Skeleton width={150} /></td>
-                          <td><Skeleton width={300} /></td>
-                          <td><Skeleton width={60} /></td>
-                          <td><Skeleton width={90} /></td>
-                          <td><Skeleton width={90} /></td>
-                        </tr>
-                      ))
-                    : list.length > 0
-                    ? list.map((awardType, i) => (
-                        <tr key={awardType._id}>
-                          <td className="ps-4 py-3">{startIndex + i + 1}</td>
-                          <td className="fw-semibold">{awardType.name}</td>
-                          <td>{awardType.description || "—"}</td>
-                          <td>
-                            <span
-                              className={`badge px-2 py-1 ${
-                                awardType.status ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"
-                              }`}
-                            >
-                              {awardType.status ? "Active" : "Inactive"}
-                            </span>
-                          </td>
-                          <td>{moment(awardType.createdAt).format("YYYY-MM-DD")}</td>
-                          <td className="text-center pe-4">
-                            {/* View Action - Placeholder for future use, matching the screenshot */}
-                            {/* <BsEye
-                              size={18}
-                              className="mx-2 text-primary"
-                              style={{ cursor: "pointer" }}
-                              title="View"
-                            /> */}
-                            <BsPencil
-                              size={18}
-                              className="mx-2 text-warning"
-                              style={{ cursor: "pointer" }}
-                              title="Edit"
-                              onClick={() => handleOpenEditModal(awardType)}
-                            />
-                            <BsTrash
-                              size={18}
-                              className="mx-2 text-danger"
-                              style={{ cursor: "pointer" }}
-                              title="Delete"
-                              onClick={() => handleDeleteAwardType(awardType._id)}
-                            />
-                          </td>
-                        </tr>
-                      ))
-                    : (
-                        <tr>
-                          <td colSpan="6" className="text-center py-4">
-                            <NoRecordFound />
-                          </td>
-                        </tr>
-                      )}
+                  {showSkeleton ? (
+                    Array.from({ length: payload.pageCount }).map((_, i) => (
+                      <tr key={i}>
+                        <td className="ps-4 py-3">
+                          <Skeleton width={20} />
+                        </td>
+                        <td>
+                          <Skeleton width={150} />
+                        </td>
+                        <td>
+                          <Skeleton width={300} />
+                        </td>
+                        <td>
+                          <Skeleton width={60} />
+                        </td>
+                        <td>
+                          <Skeleton width={90} />
+                        </td>
+                        <td>
+                          <Skeleton width={90} />
+                        </td>
+                      </tr>
+                    ))
+                  ) : list.length > 0 ? (
+                    list.map((awardType, i) => (
+                      <tr key={awardType._id}>
+                        <td className="ps-4 py-3">{startIndex + i + 1}</td>
+                        <td className="fw-semibold">{awardType.name}</td>
+                        <td
+                          className="text-dark fw-medium px-3 py-2"
+                          style={{
+                            maxWidth: "250px",
+                            fontSize: "0.875rem",
+                            whiteSpace: "normal",
+                            wordWrap: "break-word",
+                          }}
+                        >
+                          {awardType.description || "—"}
+                        </td>
+
+                        <td>
+                          <span
+                            className={`badge px-2 py-1 ${
+                              awardType.status
+                                ? "bg-success-subtle text-success"
+                                : "bg-danger-subtle text-danger"
+                            }`}
+                          >
+                            {awardType.status ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td>
+                          {moment(awardType.createdAt).format("YYYY-MM-DD")}
+                        </td>
+                        <td className="text-center pe-4">
+                          <ActionButtons
+                            // canView={canView}
+                            canUpdate={canUpdate}
+                            canDelete={canDelete}
+                            onView={() =>
+                              toast.info(
+                                `Viewing Award Type: ${awardType.name}`
+                              )
+                            }
+                            onEdit={() => handleOpenEditModal(awardType)}
+                            onDelete={() =>
+                              handleDeleteAwardType(awardType._id)
+                            }
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center py-4">
+                        <NoRecordFound />
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -288,20 +343,55 @@ function AwardTypeList() {
           {/* Pagination */}
           <div className="d-flex justify-content-between align-items-center mt-3">
             <div className="text-muted">
-              Showing {startIndex + 1} to {endIndex} of {totalRecords} award types
+              Showing {startIndex + 1} to {endIndex} of {totalRecords} award
+              types
             </div>
             <nav>
               <ul className="pagination pagination-sm mb-0">
-                <li className={`page-item ${payload.pageNo === 1 ? "disabled" : ""}`}>
-                  <button className="page-link" onClick={() => setPayload({ ...payload, pageNo: payload.pageNo - 1 })}>Previous</button>
+                <li
+                  className={`page-item ${
+                    payload.pageNo === 1 ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setPayload({ ...payload, pageNo: payload.pageNo - 1 })
+                    }
+                  >
+                    Previous
+                  </button>
                 </li>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <li key={page} className={`page-item ${payload.pageNo === page ? "active" : ""}`}>
-                    <button className="page-link" onClick={() => setPayload({ ...payload, pageNo: page })}>{page}</button>
-                  </li>
-                ))}
-                <li className={`page-item ${payload.pageNo === totalPages ? "disabled" : ""}`}>
-                  <button className="page-link" onClick={() => setPayload({ ...payload, pageNo: payload.pageNo + 1 })}>Next</button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <li
+                      key={page}
+                      className={`page-item ${
+                        payload.pageNo === page ? "active" : ""
+                      }`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() => setPayload({ ...payload, pageNo: page })}
+                      >
+                        {page}
+                      </button>
+                    </li>
+                  )
+                )}
+                <li
+                  className={`page-item ${
+                    payload.pageNo === totalPages ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setPayload({ ...payload, pageNo: payload.pageNo + 1 })
+                    }
+                  >
+                    Next
+                  </button>
                 </li>
               </ul>
             </nav>
@@ -337,7 +427,9 @@ function AwardTypeList() {
                 />
               </div>
 
-              <h5 className="mb-4">{editingAwardType ? "Edit Award Type" : "Add Award Type"}</h5>
+              <h5 className="mb-4">
+                {editingAwardType ? "Edit Award Type" : "Add Award Type"}
+              </h5>
 
               <div className="mb-3">
                 <label className="form-label">Award Name *</label>
@@ -374,7 +466,10 @@ function AwardTypeList() {
                 <label className="form-check-label">Active</label>
               </div>
 
-              <button className="btn btn-success w-100 mt-3" onClick={handleSaveAwardType}>
+              <button
+                className="btn btn-success w-100 mt-3"
+                onClick={handleSaveAwardType}
+              >
                 {editingAwardType ? "Update" : "Submit"}
               </button>
             </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useGlobalState } from "../GlobalProvider";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -7,103 +7,80 @@ const GREEN = "#16a34a";
 function Sidebar({ selectedMenu, selectedItem }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { globalState, setGlobalState } = useGlobalState(); // include setter
+  const { globalState, setGlobalState } = useGlobalState();
 
   const [hoverExpand, setHoverExpand] = useState(false);
   const isExpanded = globalState?.showFullSidebar || hoverExpand;
 
-  const navItem = useMemo(
+  // Step 1️⃣: Define the full sidebar structure
+  const allNavItems = useMemo(
     () => [
       {
         menuIcon: "https://cdn-icons-png.flaticon.com/128/1828/1828791.png",
         menu: "Dashboard",
         subMenu: [{ name: "Dashboard", path: "/" }],
       },
-      // {
-      //   menuIcon: "https://cdn-icons-png.flaticon.com/128/2435/2435245.png",
-      //   menu: "Order Management",
-      //   subMenu: [{ name: "Orders", path: "/order-list" }],
-      // },
-      // {
-      //   menuIcon: "https://cdn-icons-png.flaticon.com/128/2875/2875916.png",
-      //   menu: "Product Management",
-      //   subMenu: [
-      //     { name: "Products", path: "/product-list" },
-      //     { name: "Add Product", path: "/add-product" },
-      //     { name: "Combo Packs", path: "/combo-product-list" },
-      //     { name: "Add Combo Packs", path: "/add-combo-product" },
-      //     { name: "Categories", path: "/category-list" },
-      //     { name: "Brands", path: "/brand-list" },
-      //     { name: "Tags", path: "/tag-list" },
-      //   ],
-      // },
       {
         menuIcon: "https://cdn-icons-png.flaticon.com/128/1077/1077114.png",
         menu: "Staff",
         subMenu: [
-          { name: "Users", path: "/user-list" },
-          { name: "Role", path: "/role-list" },
+          { name: "Users", path: "/user-list", module: "Users" },
+          { name: "Role", path: "/role-list", module: "Role" },
         ],
       },
       {
         menuIcon: "https://cdn-icons-png.flaticon.com/128/1077/1077114.png",
         menu: "Hr Management",
         subMenu: [
-          { name: "Branches", path: "/branch-list" },
-          { name: "Department", path: "/department-list" },
-          { name: "Designation", path: "/designation-list" },
-          { name: "Documents Type", path: "/document-type" },
-          { name: "Employee", path: "/employee-list" },
-          { name: "Award Types", path: "/award-type" },
-          { name: "Awards", path: "/award-list" },
-          // { name: "Awards", path: "/departments-list" },
-          // { name: "Promotion", path: "/departments-list" },
+          { name: "Branches", path: "/branch-list", module: "Branches" },
+          { name: "Department", path: "/department-list", module: "Department" },
+          { name: "Designation", path: "/designation-list", module: "Designation" },
+          { name: "Documents Type", path: "/document-type", module: "Documents Type" },
+          { name: "Employee", path: "/employee-list", module: "Employee" },
+          { name: "Award Types", path: "/award-type", module: "Award Types" },
+          { name: "Awards", path: "/award-list", module: "Awards" },
         ],
       },
-      // {
-      //   menuIcon: "https://cdn-icons-png.flaticon.com/128/535/535188.png",
-      //   menu: "Location Management",
-      //   subMenu: [
-      //     { name: "States", path: "/state-list" },
-      //     { name: "City", path: "/city-list" },
-      //     { name: "Bulk Upload", path: "/bulk-upload" },
-      //   ],
-      // },
-      // {
-      //   menuIcon: "https://cdn-icons-png.flaticon.com/128/1601/1601521.png",
-      //   menu: "Banners",
-      //   subMenu: [{ name: "Banners", path: "/banner-list" }],
-      // },
-      // {
-      //   menuIcon: "https://cdn-icons-png.flaticon.com/128/2435/2435245.png",
-      //   menu: "Subscription",
-      //   subMenu: [
-      //     { name: "Scheme", path: "/scheme" },
-      //     { name: "Chit User", path: "/subscription-user" },
-      //   ],
-      // },
-      // {
-      //   menuIcon: "https://cdn-icons-png.flaticon.com/128/2840/2840215.png",
-      //   menu: "System Support",
-      //   subMenu: [
-      //     { name: "FAQs", path: "/faq-user-list" },
-      //     { name: "Contact Query", path: "/contact-query" },
-      //   ],
-      // },
-      // {
-      //   menuIcon: "https://cdn-icons-png.flaticon.com/128/2312/2312402.png",
-      //   menu: "Policy",
-      //   subMenu: [
-      //     { name: "Cookie Policy", path: "/user-cookie-policy" },
-      //     { name: "Privacy Policy", path: "/user-privacy-policy" },
-      //     { name: "Shipping Policy", path: "/user-shipping-policy" },
-      //     { name: "Terms & Condition", path: "/user-terms-condition" },
-      //     { name: "Refund and Returns", path: "/user-refund-return" },
-      //   ],
-      // },
     ],
     []
   );
+
+  // Step 2️⃣: Get permission modules that user can "view"
+  const [allowedModules, setAllowedModules] = useState([]);
+
+  useEffect(() => {
+    if (globalState?.permissions) {
+      try {
+        const perms = Array.isArray(globalState.permissions)
+          ? globalState.permissions
+          : JSON.parse(globalState.permissions);
+
+        const modulesWithView = perms
+          .filter(
+            (p) =>
+              p?.selectedActions?.includes("view") &&
+              p?.permissionId?.module
+          )
+          .map((p) => p.permissionId.module);
+
+        setAllowedModules(modulesWithView);
+      } catch (err) {
+        console.error("Failed to parse permissions:", err);
+      }
+    }
+  }, [globalState.permissions]);
+
+  // Step 3️⃣: Filter nav items based on allowed modules
+  const filteredNavItems = allNavItems
+    .map((group) => ({
+      ...group,
+      subMenu: group.subMenu.filter(
+        (s) =>
+          allowedModules.includes(s.module) ||
+          s.name === "Dashboard" // always show dashboard
+      ),
+    }))
+    .filter((group) => group.subMenu.length > 0);
 
   const [openMenu, setOpenMenu] = useState(selectedMenu || "Dashboard");
   const isActivePath = (p) => pathname === p;
@@ -114,7 +91,7 @@ function Sidebar({ selectedMenu, selectedItem }) {
       onMouseEnter={() => !globalState?.showFullSidebar && setHoverExpand(true)}
       onMouseLeave={() => setHoverExpand(false)}
     >
-      {/* Close button for mobile view */}
+      {/* Mobile Close */}
       <div className="d-flex justify-content-end p-2 d-md-none">
         <img
           src="https://cdn-icons-png.flaticon.com/128/753/753345.png"
@@ -126,7 +103,7 @@ function Sidebar({ selectedMenu, selectedItem }) {
         />
       </div>
 
-      {/* Brand row: HRM when expanded, Logo when collapsed */}
+      {/* Brand */}
       <div className="hrm-brand no-hamburger">
         {isExpanded ? (
           <div className="hrm-wordmark" aria-label="HRM">
@@ -139,14 +116,16 @@ function Sidebar({ selectedMenu, selectedItem }) {
         )}
       </div>
 
+      {/* Navigation */}
       <nav className="hrm-nav">
-        {navItem.map((group) => {
+        {filteredNavItems.map((group) => {
           const expandedGroup = openMenu === group.menu;
           const isGroupSelected =
             expandedGroup ||
             group.subMenu.some(
               (s) => s.name === selectedItem || isActivePath(s.path)
             );
+
           return (
             <div
               key={group.menu}
@@ -158,15 +137,22 @@ function Sidebar({ selectedMenu, selectedItem }) {
                 title={!isExpanded ? group.menu : undefined}
               >
                 <img src={group.menuIcon} className="hrm-icon" alt="" />
-                {isExpanded && <span className="hrm-group-text">{group.menu}</span>}
+                {isExpanded && (
+                  <span className="hrm-group-text">{group.menu}</span>
+                )}
                 {isExpanded && (
                   <span className="chev">{expandedGroup ? "▾" : "▸"}</span>
                 )}
               </button>
 
-              <div className={`hrm-sub ${expandedGroup && isExpanded ? "show" : ""}`}>
+              <div
+                className={`hrm-sub ${
+                  expandedGroup && isExpanded ? "show" : ""
+                }`}
+              >
                 {group.subMenu.map((s) => {
-                  const active = s.name === selectedItem || isActivePath(s.path);
+                  const active =
+                    s.name === selectedItem || isActivePath(s.path);
                   return (
                     <button
                       key={s.name}

@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import moment from "moment";
 import NoRecordFound from "../../Components/NoRecordFound";
+import { usePermission } from "../../hooks/usePermission";
+import ActionButtons from "../../Components/ActionButtons";
 
 // Icons
 import { BsPencil, BsTrash, BsDownload, BsImage, BsEye } from "react-icons/bs";
@@ -23,7 +25,7 @@ import {
   addAwardServ,
   updateAwardServ,
   deleteAwardServ,
-} from "../../services/award.services"; 
+} from "../../services/award.services";
 import { getAwardTypeListServ } from "../../services/awartType.services";
 import { getEmployeeListServ } from "../../services/employee.services";
 
@@ -45,6 +47,8 @@ function AwardList() {
     sortByField: "awardDate",
     sortByOrder: "desc",
   });
+  const { canView, canCreate, canUpdate, canDelete } =
+    usePermission("Awards");
 
   const [awardForm, setAwardForm] = useState({
     employee: "",
@@ -79,10 +83,13 @@ function AwardList() {
       // Employees list (using assumed service)
       const empRes = await getEmployeeListServ({ pageNo: 1, pageCount: 1000 });
       // Assumes employee objects have _id, fullName, and employeeId
-      setEmployees(empRes?.data?.data || []); 
-      
+      setEmployees(empRes?.data?.data || []);
+
       // Award Types list (using assumed service)
-      const typeRes = await getAwardTypeListServ({ pageNo: 1, pageCount: 1000 });
+      const typeRes = await getAwardTypeListServ({
+        pageNo: 1,
+        pageCount: 1000,
+      });
       setAwardTypes(typeRes?.data?.data || []);
     } catch (err) {
       console.error("Failed to load dropdown data:", err);
@@ -93,12 +100,17 @@ function AwardList() {
   useEffect(() => {
     handleGetAwards();
     handleGetDropdowns();
-  }, [payload.pageNo, payload.pageCount, payload.sortByField, payload.sortByOrder]);
-  
+  }, [
+    payload.pageNo,
+    payload.pageCount,
+    payload.sortByField,
+    payload.sortByOrder,
+  ]);
+
   // Re-fetch only on search/filter changes
   useEffect(() => {
     const handler = setTimeout(() => {
-        handleGetAwards();
+      handleGetAwards();
     }, 500); // Debounce search
 
     return () => clearTimeout(handler);
@@ -166,7 +178,7 @@ function AwardList() {
     } else {
       setAwardForm((prev) => ({
         ...prev,
-        [name]: type === 'number' ? Number(value) : value,
+        [name]: type === "number" ? Number(value) : value,
       }));
     }
   };
@@ -180,14 +192,14 @@ function AwardList() {
 
     try {
       const formData = new FormData();
-      
+
       // Append non-file fields
       formData.append("employee", awardForm.employee);
       formData.append("awardType", awardForm.awardType);
       formData.append("awardDate", awardForm.awardDate);
       formData.append("gift", awardForm.gift);
       // Ensure monetaryValue is sent as a number if needed, or simply append
-      formData.append("monetaryValue", awardForm.monetaryValue || 0); 
+      formData.append("monetaryValue", awardForm.monetaryValue || 0);
       formData.append("description", awardForm.description);
 
       // Append file fields if new files are selected
@@ -200,10 +212,10 @@ function AwardList() {
 
       if (editingAward) {
         formData.append("_id", editingAward._id); // Crucial for update API
-        await updateAwardServ(formData); 
+        await updateAwardServ(formData);
         toast.success("Award updated successfully!");
       } else {
-        await addAwardServ(formData); 
+        await addAwardServ(formData);
         toast.success("Award created successfully!");
       }
       handleCloseModal();
@@ -225,14 +237,17 @@ function AwardList() {
       }
     }
   };
-  
+
   // --- Table & Pagination Logic ---
 
   const handleSort = (field) => {
     setPayload((prev) => ({
       ...prev,
       sortByField: field,
-      sortByOrder: prev.sortByField === field && prev.sortByOrder === "asc" ? "desc" : "asc",
+      sortByOrder:
+        prev.sortByField === field && prev.sortByOrder === "asc"
+          ? "desc"
+          : "asc",
       pageNo: 1,
     }));
   };
@@ -246,13 +261,13 @@ function AwardList() {
     const num = Number(value);
     return isNaN(num) || num === 0 ? "—" : `$${num.toFixed(2)}`;
   };
-  
+
   // Helper to display employee details
   const renderEmployee = (employee) => (
-      <div>
-          <div className="fw-semibold">{employee.fullName || "—"}</div>
-          <small className="text-muted">{employee.employeeId || "—"}</small>
-      </div>
+    <div>
+      <div className="fw-semibold">{employee.fullName || "—"}</div>
+      <small className="text-muted">{employee.employeeId || "—"}</small>
+    </div>
   );
 
   return (
@@ -265,29 +280,40 @@ function AwardList() {
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
             <h3 className="fw-semibold mb-0">Awards</h3>
-            <button
-              className="btn text-white px-3"
-              style={{ background: "#16A34A", borderRadius: "0.5rem" }}
-              onClick={handleOpenAddModal}
-            >
-              <RiAddLine size={20} className="me-1" />
-              Add Award
-            </button>
+
+            {canCreate && (
+              <button
+                className="btn text-white px-3"
+                style={{ background: "#16A34A", borderRadius: "0.5rem" }}
+                onClick={handleOpenAddModal}
+              >
+                <RiAddLine size={20} className="me-1" />
+                Add Award
+              </button>
+            )}
           </div>
 
           {/* Search & Filters (Matching Screenshot Layout) */}
           <div className="card shadow-sm p-3 mb-4 rounded-3 border-0">
             <div className="row g-2 align-items-end">
-              
               <div className="col-lg-3 col-md-12">
-                <label className="form-label text-muted" style={{fontSize: '0.85rem'}}>Search Description</label>
+                <label
+                  className="form-label text-muted"
+                  style={{ fontSize: "0.85rem" }}
+                >
+                  Search Description
+                </label>
                 <div className="input-group">
                   <input
                     className="form-control"
                     placeholder="Search..."
                     value={payload.searchKey}
                     onChange={(e) =>
-                      setPayload({ ...payload, searchKey: e.target.value, pageNo: 1 })
+                      setPayload({
+                        ...payload,
+                        searchKey: e.target.value,
+                        pageNo: 1,
+                      })
                     }
                   />
                   <button
@@ -301,47 +327,78 @@ function AwardList() {
               </div>
 
               <div className="col-lg-2 col-md-4">
-                <label className="form-label text-muted" style={{fontSize: '0.85rem'}}>Filter</label>
+                <label
+                  className="form-label text-muted"
+                  style={{ fontSize: "0.85rem" }}
+                >
+                  Filter
+                </label>
                 <select
-                    className="form-select"
-                    value={payload.employee}
-                    onChange={(e) =>
-                      setPayload({ ...payload, employee: e.target.value, pageNo: 1 })
-                    }
-                  >
-                    <option value="">Employee</option>
-                    {employees.map((e) => (
-                      <option key={e._id} value={e._id}>{e.fullName}</option>
-                    ))}
-                  </select>
+                  className="form-select"
+                  value={payload.employee}
+                  onChange={(e) =>
+                    setPayload({
+                      ...payload,
+                      employee: e.target.value,
+                      pageNo: 1,
+                    })
+                  }
+                >
+                  <option value="">Employee</option>
+                  {employees.map((e) => (
+                    <option key={e._id} value={e._id}>
+                      {e.fullName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="col-lg-2 col-md-4">
-                 <label className="form-label text-muted" style={{fontSize: '0.85rem', visibility: 'hidden'}}>Filter</label>
+                <label
+                  className="form-label text-muted"
+                  style={{ fontSize: "0.85rem", visibility: "hidden" }}
+                >
+                  Filter
+                </label>
                 <select
-                    className="form-select"
-                    value={payload.awardType}
-                    onChange={(e) =>
-                      setPayload({ ...payload, awardType: e.target.value, pageNo: 1 })
-                    }
-                  >
-                    <option value="">Award Type</option>
-                    {awardTypes.map((a) => (
-                      <option key={a._id} value={a._id}>{a.name}</option>
-                    ))}
-                  </select>
+                  className="form-select"
+                  value={payload.awardType}
+                  onChange={(e) =>
+                    setPayload({
+                      ...payload,
+                      awardType: e.target.value,
+                      pageNo: 1,
+                    })
+                  }
+                >
+                  <option value="">Award Type</option>
+                  {awardTypes.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
               </div>
-              
+
               {/* Per Page control on the right, matching screenshot style */}
               <div className="col-lg-5 col-md-4 d-flex justify-content-end">
                 <div className="d-flex align-items-center">
-                  <span className="me-2 text-muted" style={{fontSize: '0.85rem'}}>Per Page:</span>
+                  <span
+                    className="me-2 text-muted"
+                    style={{ fontSize: "0.85rem" }}
+                  >
+                    Per Page:
+                  </span>
                   <select
                     className="form-select"
                     style={{ width: "auto" }}
                     value={payload.pageCount}
                     onChange={(e) =>
-                      setPayload({ ...payload, pageCount: Number(e.target.value), pageNo: 1 })
+                      setPayload({
+                        ...payload,
+                        pageCount: Number(e.target.value),
+                        pageNo: 1,
+                      })
                     }
                   >
                     <option value={10}>10</option>
@@ -360,13 +417,22 @@ function AwardList() {
                 <thead>
                   <tr style={{ background: "#F8FAFC" }}>
                     <th className="ps-4">#</th>
-                    <th onClick={() => handleSort("employee")} style={{ cursor: "pointer" }}>
+                    <th
+                      onClick={() => handleSort("employee")}
+                      style={{ cursor: "pointer" }}
+                    >
                       Employee <MdPeopleOutline size={14} />
                     </th>
-                    <th onClick={() => handleSort("awardType")} style={{ cursor: "pointer" }}>
+                    <th
+                      onClick={() => handleSort("awardType")}
+                      style={{ cursor: "pointer" }}
+                    >
                       Award Type <GiTrophy size={14} />
                     </th>
-                    <th onClick={() => handleSort("awardDate")} style={{ cursor: "pointer" }}>
+                    <th
+                      onClick={() => handleSort("awardDate")}
+                      style={{ cursor: "pointer" }}
+                    >
                       Award Date <BiCalendar size={14} />
                     </th>
                     <th>Gift</th>
@@ -376,74 +442,109 @@ function AwardList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {showSkeleton
-                    ? Array.from({ length: payload.pageCount }).map((_, i) => (
-                        <tr key={i}>
-                          <td className="ps-4 py-3"><Skeleton width={20} /></td>
-                          <td><Skeleton width={120} height={30} /></td>
-                          <td><Skeleton width={150} /></td>
-                          <td><Skeleton width={80} /></td>
-                          <td><Skeleton width={60} /></td>
-                          <td><Skeleton width={70} /></td>
-                          <td><Skeleton width={100} /></td>
-                          <td><Skeleton width={90} /></td>
-                        </tr>
-                      ))
-                    : list.length > 0
-                    ? list.map((award, i) => (
-                        <tr key={award._id}>
-                          <td className="ps-4 py-3">{startIndex + i + 1}</td>
-                          <td>{award.employee ? renderEmployee(award.employee) : "—"}</td>
-                          <td className="fw-semibold">{award.awardType?.name || "—"}</td>
-                          <td>{moment(award.awardDate).format("YYYY-MM-DD")}</td>
-                          <td>{award.gift || "—"}</td>
-                          <td>{formatCurrency(award.monetaryValue)}</td>
-                          <td style={{minWidth: '150px'}}>
-                            {award.certificate && (
-                                <a href={award.certificate} target="_blank" rel="noopener noreferrer" className="badge text-decoration-none me-1" style={{background: '#D9F99D', color: '#65A30D'}} title="View Certificate">
-                                    Certificate
-                                </a>
-                            )}
-                            {award.photo && (
-                                <a href={award.photo} target="_blank" rel="noopener noreferrer" className="badge text-decoration-none" style={{background: '#BAE6FD', color: '#0369A1'}} title="View Photo">
-                                    Photo
-                                </a>
-                            )}
-                            {!award.certificate && !award.photo && "—"}
-                          </td>
-                          <td className="text-center pe-4" style={{minWidth: '130px'}}>
-                            {/* View/Details action - Assuming it shows description/files */}
-                            {/* <BsEye
-                              size={18}
-                              className="mx-2 text-primary"
-                              style={{ cursor: "pointer" }}
-                              title="View Details (Description)"
-                              onClick={() => toast.info(`Description: ${award.description || 'N/A'}`)}
-                            /> */}
-                            <BsPencil
-                              size={18}
-                              className="mx-2 text-warning"
-                              style={{ cursor: "pointer" }}
-                              title="Edit"
-                              onClick={() => handleOpenEditModal(award)}
-                            />
-                            <BsTrash
-                              size={18}
-                              className="mx-2 text-danger"
-                              style={{ cursor: "pointer" }}
-                              title="Delete"
-                              onClick={() => handleDeleteAward(award._id)}
-                            />
-                          </td>
-                        </tr>
-                      ))
-                    : (
-                        <tr>
-                          <td colSpan="8" className="text-center py-4">
-                            <NoRecordFound />
-                          </td>
-                        </tr>
-                      )}
+                  {showSkeleton ? (
+                    Array.from({ length: payload.pageCount }).map((_, i) => (
+                      <tr key={i}>
+                        <td className="ps-4 py-3">
+                          <Skeleton width={20} />
+                        </td>
+                        <td>
+                          <Skeleton width={120} height={30} />
+                        </td>
+                        <td>
+                          <Skeleton width={150} />
+                        </td>
+                        <td>
+                          <Skeleton width={80} />
+                        </td>
+                        <td>
+                          <Skeleton width={60} />
+                        </td>
+                        <td>
+                          <Skeleton width={70} />
+                        </td>
+                        <td>
+                          <Skeleton width={100} />
+                        </td>
+                        <td>
+                          <Skeleton width={90} />
+                        </td>
+                      </tr>
+                    ))
+                  ) : list.length > 0 ? (
+                    list.map((award, i) => (
+                      <tr key={award._id}>
+                        <td className="ps-4 py-3">{startIndex + i + 1}</td>
+                        <td>
+                          {award.employee
+                            ? renderEmployee(award.employee)
+                            : "—"}
+                        </td>
+                        <td className="fw-semibold">
+                          {award.awardType?.name || "—"}
+                        </td>
+                        <td>{moment(award.awardDate).format("YYYY-MM-DD")}</td>
+                        <td>{award.gift || "—"}</td>
+                        <td>{formatCurrency(award.monetaryValue)}</td>
+                        <td style={{ minWidth: "150px" }}>
+                          {award.certificate && (
+                            <a
+                              href={award.certificate}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="badge text-decoration-none me-1"
+                              style={{
+                                background: "#D9F99D",
+                                color: "#65A30D",
+                              }}
+                              title="View Certificate"
+                            >
+                              Certificate
+                            </a>
+                          )}
+                          {award.photo && (
+                            <a
+                              href={award.photo}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="badge text-decoration-none"
+                              style={{
+                                background: "#BAE6FD",
+                                color: "#0369A1",
+                              }}
+                              title="View Photo"
+                            >
+                              Photo
+                            </a>
+                          )}
+                          {!award.certificate && !award.photo && "—"}
+                        </td>
+                        <td
+                          className="text-center pe-4"
+                          style={{ minWidth: "130px" }}
+                        >
+                          <ActionButtons
+                            // canView={canView}
+                            canUpdate={canUpdate}
+                            canDelete={canDelete}
+                            onView={() =>
+                              toast.info(
+                                `Description: ${award.description || "N/A"}`
+                              )
+                            }
+                            onEdit={() => handleOpenEditModal(award)}
+                            onDelete={() => handleDeleteAward(award._id)}
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="text-center py-4">
+                        <NoRecordFound />
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -456,16 +557,50 @@ function AwardList() {
             </div>
             <nav>
               <ul className="pagination pagination-sm mb-0">
-                <li className={`page-item ${payload.pageNo === 1 ? "disabled" : ""}`}>
-                  <button className="page-link" onClick={() => setPayload({ ...payload, pageNo: payload.pageNo - 1 })}>Previous</button>
+                <li
+                  className={`page-item ${
+                    payload.pageNo === 1 ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setPayload({ ...payload, pageNo: payload.pageNo - 1 })
+                    }
+                  >
+                    Previous
+                  </button>
                 </li>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <li key={page} className={`page-item ${payload.pageNo === page ? "active" : ""}`}>
-                    <button className="page-link" onClick={() => setPayload({ ...payload, pageNo: page })}>{page}</button>
-                  </li>
-                ))}
-                <li className={`page-item ${payload.pageNo === totalPages ? "disabled" : ""}`}>
-                  <button className="page-link" onClick={() => setPayload({ ...payload, pageNo: payload.pageNo + 1 })}>Next</button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <li
+                      key={page}
+                      className={`page-item ${
+                        payload.pageNo === page ? "active" : ""
+                      }`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() => setPayload({ ...payload, pageNo: page })}
+                      >
+                        {page}
+                      </button>
+                    </li>
+                  )
+                )}
+                <li
+                  className={`page-item ${
+                    payload.pageNo === totalPages ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setPayload({ ...payload, pageNo: payload.pageNo + 1 })
+                    }
+                  >
+                    Next
+                  </button>
                 </li>
               </ul>
             </nav>
@@ -501,63 +636,69 @@ function AwardList() {
                 />
               </div>
 
-              <h5 className="mb-4">{editingAward ? "Edit Award" : "Give New Award"}</h5>
+              <h5 className="mb-4">
+                {editingAward ? "Edit Award" : "Give New Award"}
+              </h5>
 
               <div className="row">
                 <div className="col-md-6 mb-3">
-                    <label className="form-label">Employee *</label>
-                    <select
+                  <label className="form-label">Employee *</label>
+                  <select
                     name="employee"
                     className="form-select"
                     value={awardForm.employee}
                     onChange={handleFormChange}
                     disabled={!!editingAward} // Prevent changing employee on edit
-                    >
+                  >
                     <option value="">Select Employee</option>
                     {employees.map((e) => (
-                        <option key={e._id} value={e._id}>{e.fullName} ({e.employeeId})</option>
+                      <option key={e._id} value={e._id}>
+                        {e.fullName} ({e.employeeId})
+                      </option>
                     ))}
-                    </select>
+                  </select>
                 </div>
 
                 <div className="col-md-6 mb-3">
-                    <label className="form-label">Award Type *</label>
-                    <select
+                  <label className="form-label">Award Type *</label>
+                  <select
                     name="awardType"
                     className="form-select"
                     value={awardForm.awardType}
                     onChange={handleFormChange}
-                    >
+                  >
                     <option value="">Select Award Type</option>
                     {awardTypes.map((a) => (
-                        <option key={a._id} value={a._id}>{a.name}</option>
+                      <option key={a._id} value={a._id}>
+                        {a.name}
+                      </option>
                     ))}
-                    </select>
+                  </select>
                 </div>
               </div>
 
               <div className="row">
                 <div className="col-md-6 mb-3">
-                    <label className="form-label">Award Date *</label>
-                    <input
+                  <label className="form-label">Award Date *</label>
+                  <input
                     type="date"
                     name="awardDate"
                     className="form-control"
                     value={awardForm.awardDate}
                     onChange={handleFormChange}
-                    />
+                  />
                 </div>
 
                 <div className="col-md-6 mb-3">
-                    <label className="form-label">Gift</label>
-                    <input
+                  <label className="form-label">Gift</label>
+                  <input
                     type="text"
                     name="gift"
                     className="form-control"
                     value={awardForm.gift}
                     onChange={handleFormChange}
                     placeholder="e.g., Dinner Voucher, Plaque"
-                    />
+                  />
                 </div>
               </div>
 
@@ -588,34 +729,54 @@ function AwardList() {
 
               <div className="row">
                 <div className="col-md-6 mb-3">
-                    <label className="form-label">Certificate File</label>
-                    <input
+                  <label className="form-label">Certificate File</label>
+                  <input
                     type="file"
                     name="certificate"
                     className="form-control"
                     onChange={handleFormChange}
-                    />
-                    {editingAward?.certificate && !awardForm.certificate && (
-                        <small className="text-muted">Current: <a href={editingAward.certificate} target="_blank" rel="noopener noreferrer">View File</a></small>
-                    )}
+                  />
+                  {editingAward?.certificate && !awardForm.certificate && (
+                    <small className="text-muted">
+                      Current:{" "}
+                      <a
+                        href={editingAward.certificate}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View File
+                      </a>
+                    </small>
+                  )}
                 </div>
 
                 <div className="col-md-6 mb-3">
-                    <label className="form-label">Photo File</label>
-                    <input
+                  <label className="form-label">Photo File</label>
+                  <input
                     type="file"
                     name="photo"
                     className="form-control"
                     onChange={handleFormChange}
-                    />
-                    {editingAward?.photo && !awardForm.photo && (
-                        <small className="text-muted">Current: <a href={editingAward.photo} target="_blank" rel="noopener noreferrer">View Photo</a></small>
-                    )}
+                  />
+                  {editingAward?.photo && !awardForm.photo && (
+                    <small className="text-muted">
+                      Current:{" "}
+                      <a
+                        href={editingAward.photo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View Photo
+                      </a>
+                    </small>
+                  )}
                 </div>
               </div>
 
-
-              <button className="btn btn-success w-100 mt-3" onClick={handleSaveAward}>
+              <button
+                className="btn btn-success w-100 mt-3"
+                onClick={handleSaveAward}
+              >
                 {editingAward ? "Update Award" : "Submit Award"}
               </button>
             </div>

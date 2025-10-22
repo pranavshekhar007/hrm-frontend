@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import moment from "moment";
 import NoRecordFound from "../../Components/NoRecordFound";
+import { usePermission } from "../../hooks/usePermission";
+import ActionButtons from "../../Components/ActionButtons";
 
 // Icons
 import { BsPencil, BsTrash, BsEye, BsLock } from "react-icons/bs";
@@ -210,6 +212,9 @@ function EmployeeList() {
     }
   };
 
+  const { canView, canCreate, canUpdate, canDelete } =
+    usePermission("Employee");
+
   // The actual JSX render
   return (
     <div className="bodyContainer">
@@ -221,14 +226,16 @@ function EmployeeList() {
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
             <h3 className="fw-semibold mb-0">Employee Management</h3>
-            <button
-              className="btn text-white px-3"
-              style={{ background: "#16A34A", borderRadius: "0.5rem" }}
-              onClick={handleAddEmployeeClick}
-            >
-              <RiAddLine size={20} className="me-1" />
-              Add Employee
-            </button>
+            {canCreate && (
+              <button
+                className="btn text-white px-3"
+                style={{ background: "#16A34A", borderRadius: "0.5rem" }}
+                onClick={handleAddEmployeeClick}
+              >
+                <RiAddLine size={20} className="me-1" />
+                Add Employee
+              </button>
+            )}
           </div>
 
           {/* Search Bar & Controls */}
@@ -426,34 +433,48 @@ function EmployeeList() {
                           {moment(employee.dateOfJoining).format("YYYY-MM-DD")}
                         </td>
                         <td className="text-center pe-4">
-                          {/* <BsEye size={18} className="mx-1 text-primary" style={{ cursor: "pointer" }} onClick={() => toast.info(`View ${employee.fullName}`)} /> */}
-                          <BsPencil
-                            size={18}
-                            className="mx-1 text-warning"
-                            style={{ cursor: "pointer" }}
-                            onClick={() =>
-                              navigate(`/edit-employee/${employee._id}`)
-                            }
-                          />
-                          {/* <BsLock size={18} className="mx-1 text-success" style={{ cursor: "pointer" }} onClick={() => toast.info(`Access ${employee.fullName}`)} /> */}
-                          <FaKey
-                            size={18}
-                            className="mx-2"
-                            title="Reset Password"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleOpenResetModal(employee)}
-                          />
-                          <BsTrash
-                            size={18}
-                            className="mx-1 text-danger"
-                            style={{ cursor: "pointer" }}
-                            onClick={() =>
-                              handleDeleteEmployee(
-                                employee._id,
-                                employee.fullName
-                              )
-                            } // Integrated Delete
-                          />
+                          {/* {canView && (
+                            <BsEye
+                              size={18}
+                              className="mx-1 text-primary"
+                              style={{ cursor: "pointer" }}
+                              onClick={() =>
+                                toast.info(`View ${employee.fullName}`)
+                              }
+                            />
+                          )} */}
+                          {canUpdate && (
+                            <BsPencil
+                              size={18}
+                              className="mx-1 text-warning"
+                              style={{ cursor: "pointer" }}
+                              onClick={() =>
+                                navigate(`/edit-employee/${employee._id}`)
+                              }
+                            />
+                          )}
+                          {canUpdate && (
+                            <FaKey
+                              size={18}
+                              className="mx-2"
+                              title="Reset Password"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => handleOpenResetModal(employee)}
+                            />
+                          )}
+                          {canDelete && (
+                            <BsTrash
+                              size={18}
+                              className="mx-1 text-danger"
+                              style={{ cursor: "pointer" }}
+                              onClick={() =>
+                                handleDeleteEmployee(
+                                  employee._id,
+                                  employee.fullName
+                                )
+                              }
+                            />
+                          )}
                         </td>
                       </tr>
                     ))
@@ -526,99 +547,99 @@ function EmployeeList() {
           </div>
         </div>
         {showResetModal && (
-                  <div
-                    className="modal-overlay"
-                    style={{
-                      position: "fixed",
-                      inset: 0,
-                      backgroundColor: "rgba(0,0,0,0.5)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      zIndex: 3000,
-                      overflowY: "auto",
-                      padding: "1rem",
-                    }}
-                  >
-                    <div
-                      className="modal-content p-4 rounded-4 bg-white"
-                      style={{
-                        width: 364,
-                        maxHeight: "90vh",
-                        overflowY: "auto",
-                      }}
-                    >
-                      <div className="d-flex justify-content-end mb-3">
-                        <img
-                          src="https://cdn-icons-png.flaticon.com/128/9068/9068699.png"
-                          style={{ height: 20, cursor: "pointer" }}
-                          onClick={handleCloseResetModal}
-                        />
-                      </div>
-        
-                      <h5 className="mb-4">Reset Password for {resetUser?.name}</h5>
-        
-                      {/* New Password */}
-                      <div className="mb-3 position-relative">
-                        <label className="form-label mb-1 text-muted fw-normal">
-                          New Password <span className="text-danger">*</span>
-                        </label>
-                        <input
-                          className="form-control"
-                          type={showNewPass ? "text" : "password"}
-                          name="newPassword"
-                          value={resetForm.newPassword}
-                          onChange={handleResetPasswordChange}
-                        />
-                        <span
-                          style={{
-                            position: "absolute",
-                            right: 10,
-                            top: 34,
-                            cursor: "pointer",
-                            color: "#6B7280",
-                          }}
-                          onClick={() => setShowNewPass((prev) => !prev)}
-                        >
-                          {showNewPass ? <FaEyeSlash /> : <FaEye />}
-                        </span>
-                      </div>
-        
-                      {/* Confirm Password */}
-                      <div className="mb-3 position-relative">
-                        <label className="form-label mb-1 text-muted fw-normal">
-                          Confirm Password <span className="text-danger">*</span>
-                        </label>
-                        <input
-                          className="form-control"
-                          type={showConfirmPass ? "text" : "password"}
-                          name="confirmPassword"
-                          value={resetForm.confirmPassword}
-                          onChange={handleResetPasswordChange}
-                        />
-                        <span
-                          style={{
-                            position: "absolute",
-                            right: 10,
-                            top: 34,
-                            cursor: "pointer",
-                            color: "#6B7280",
-                          }}
-                          onClick={() => setShowConfirmPass((prev) => !prev)}
-                        >
-                          {showConfirmPass ? <FaEyeSlash /> : <FaEye />}
-                        </span>
-                      </div>
-        
-                      <button
-                        className="btn btn-success w-100 mt-3"
-                        onClick={handleSaveResetPassword}
-                      >
-                        Reset Password
-                      </button>
-                    </div>
-                  </div>
-                )}
+          <div
+            className="modal-overlay"
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 3000,
+              overflowY: "auto",
+              padding: "1rem",
+            }}
+          >
+            <div
+              className="modal-content p-4 rounded-4 bg-white"
+              style={{
+                width: 364,
+                maxHeight: "90vh",
+                overflowY: "auto",
+              }}
+            >
+              <div className="d-flex justify-content-end mb-3">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/128/9068/9068699.png"
+                  style={{ height: 20, cursor: "pointer" }}
+                  onClick={handleCloseResetModal}
+                />
+              </div>
+
+              <h5 className="mb-4">Reset Password for {resetUser?.name}</h5>
+
+              {/* New Password */}
+              <div className="mb-3 position-relative">
+                <label className="form-label mb-1 text-muted fw-normal">
+                  New Password <span className="text-danger">*</span>
+                </label>
+                <input
+                  className="form-control"
+                  type={showNewPass ? "text" : "password"}
+                  name="newPassword"
+                  value={resetForm.newPassword}
+                  onChange={handleResetPasswordChange}
+                />
+                <span
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: 34,
+                    cursor: "pointer",
+                    color: "#6B7280",
+                  }}
+                  onClick={() => setShowNewPass((prev) => !prev)}
+                >
+                  {showNewPass ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+
+              {/* Confirm Password */}
+              <div className="mb-3 position-relative">
+                <label className="form-label mb-1 text-muted fw-normal">
+                  Confirm Password <span className="text-danger">*</span>
+                </label>
+                <input
+                  className="form-control"
+                  type={showConfirmPass ? "text" : "password"}
+                  name="confirmPassword"
+                  value={resetForm.confirmPassword}
+                  onChange={handleResetPasswordChange}
+                />
+                <span
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: 34,
+                    cursor: "pointer",
+                    color: "#6B7280",
+                  }}
+                  onClick={() => setShowConfirmPass((prev) => !prev)}
+                >
+                  {showConfirmPass ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+
+              <button
+                className="btn btn-success w-100 mt-3"
+                onClick={handleSaveResetPassword}
+              >
+                Reset Password
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

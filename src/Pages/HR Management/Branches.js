@@ -20,6 +20,8 @@ import {
   updateBranchServ,
   deleteBranchServ,
 } from "../../services/branch.services";
+import { usePermission } from "../../hooks/usePermission";
+import ActionButtons from "../../Components/ActionButtons";
 
 function BranchList() {
   const [list, setList] = useState([]);
@@ -120,7 +122,10 @@ function BranchList() {
 
     try {
       if (editingBranch) {
-        const res = await updateBranchServ({ _id: editingBranch._id, ...branchForm });
+        const res = await updateBranchServ({
+          _id: editingBranch._id,
+          ...branchForm,
+        });
         toast.success(res?.data?.message || "Branch updated successfully!");
       } else {
         const res = await addBranchServ(branchForm);
@@ -151,10 +156,14 @@ function BranchList() {
     setPayload((prev) => ({
       ...prev,
       sortByField: field,
-      sortOrder: prev.sortByField === field && prev.sortOrder === "asc" ? "desc" : "asc",
+      sortOrder:
+        prev.sortByField === field && prev.sortOrder === "asc" ? "desc" : "asc",
       pageNo: 1,
     }));
   };
+
+  const { canView, canCreate, canUpdate, canDelete } =
+    usePermission("Branches");
 
   return (
     <div className="bodyContainer">
@@ -165,18 +174,20 @@ function BranchList() {
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
             <h3 className="fw-semibold mb-0">Branch Management</h3>
-            <button
-              className="btn text-white px-3"
-              style={{
-                background: "#16A34A",
-                boxShadow: "0 4px 12px rgba(22,163,74,0.3)",
-                borderRadius: "0.5rem",
-              }}
-              onClick={handleOpenAddModal}
-            >
-              <RiAddLine size={20} className="me-1" />
-              Add Branch
-            </button>
+            {canCreate && (
+              <button
+                className="btn text-white px-3"
+                style={{
+                  background: "#16A34A",
+                  boxShadow: "0 4px 12px rgba(22,163,74,0.3)",
+                  borderRadius: "0.5rem",
+                }}
+                onClick={handleOpenAddModal}
+              >
+                <RiAddLine size={20} className="me-1" />
+                Add Branch
+              </button>
+            )}
           </div>
 
           {/* Search */}
@@ -189,7 +200,11 @@ function BranchList() {
                     placeholder="Search..."
                     value={payload.searchKey}
                     onChange={(e) =>
-                      setPayload({ ...payload, searchKey: e.target.value, pageNo: 1 })
+                      setPayload({
+                        ...payload,
+                        searchKey: e.target.value,
+                        pageNo: 1,
+                      })
                     }
                   />
                   <button
@@ -210,7 +225,11 @@ function BranchList() {
                     style={{ width: "auto" }}
                     value={payload.pageCount}
                     onChange={(e) =>
-                      setPayload({ ...payload, pageCount: Number(e.target.value), pageNo: 1 })
+                      setPayload({
+                        ...payload,
+                        pageCount: Number(e.target.value),
+                        pageNo: 1,
+                      })
                     }
                   >
                     <option value={10}>10</option>
@@ -229,7 +248,10 @@ function BranchList() {
                 <thead>
                   <tr style={{ background: "#F8FAFC", color: "#6B7280" }}>
                     <th className="py-3 ps-4">#</th>
-                    <th className="py-3 cursor-pointer" onClick={() => handleSort("name")}>
+                    <th
+                      className="py-3 cursor-pointer"
+                      onClick={() => handleSort("name")}
+                    >
                       Name
                     </th>
                     <th className="py-3">Address</th>
@@ -240,66 +262,90 @@ function BranchList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {showSkeleton
-                    ? Array.from({ length: payload.pageCount }).map((_, i) => (
-                        <tr key={i}>
-                          <td className="ps-4 py-3"><Skeleton width={20} /></td>
-                          <td className="py-3"><Skeleton width={100} /></td>
-                          <td className="py-3"><Skeleton width={200} /></td>
-                          <td className="py-3"><Skeleton width={150} /></td>
-                          <td className="py-3"><Skeleton width={60} /></td>
-                          <td className="py-3"><Skeleton width={90} /></td>
-                          <td className="py-3 text-center"><Skeleton width={90} /></td>
-                        </tr>
-                      ))
-                    : list.length > 0
-                    ? list.map((branch, i) => (
-                        <tr key={branch._id}>
-                          <td className="ps-4 py-3">{(payload.pageNo - 1) * payload.pageCount + i + 1}</td>
-                          <td className="py-3 fw-semibold text-dark">{branch.branchName}</td>
-                          <td className="py-3 text-muted">
-                            {branch.address}, {branch.city}, {branch.state}, {branch.country}
-                          </td>
-                          <td className="py-3 text-muted">
-                            <div>{branch.phone}</div>
-                            <div>{branch.contactEmail}</div>
-                          </td>
-                          <td className="py-3">
-                            <span
-                              className={`badge px-2 py-1 ${
-                                branch.status
-                                  ? "bg-success-subtle text-success"
-                                  : "bg-danger-subtle text-danger"
-                              }`}
-                            >
-                              {branch.status ? "Active" : "Inactive"}
-                            </span>
-                          </td>
-                          <td className="py-3 text-muted">{moment(branch.createdAt).format("YYYY-MM-DD")}</td>
-                          <td className="py-3 text-center">
-                            {/* <BsEye size={18} className="mx-2 text-primary" title="View" /> */}
+                  {showSkeleton ? (
+                    Array.from({ length: payload.pageCount }).map((_, i) => (
+                      <tr key={i}>
+                        <td className="ps-4 py-3">
+                          <Skeleton width={20} />
+                        </td>
+                        <td className="py-3">
+                          <Skeleton width={100} />
+                        </td>
+                        <td className="py-3">
+                          <Skeleton width={200} />
+                        </td>
+                        <td className="py-3">
+                          <Skeleton width={150} />
+                        </td>
+                        <td className="py-3">
+                          <Skeleton width={60} />
+                        </td>
+                        <td className="py-3">
+                          <Skeleton width={90} />
+                        </td>
+                        <td className="py-3 text-center">
+                          <Skeleton width={90} />
+                        </td>
+                      </tr>
+                    ))
+                  ) : list.length > 0 ? (
+                    list.map((branch, i) => (
+                      <tr key={branch._id}>
+                        <td className="ps-4 py-3">
+                          {(payload.pageNo - 1) * payload.pageCount + i + 1}
+                        </td>
+                        <td className="py-3 fw-semibold text-dark">
+                          {branch.branchName}
+                        </td>
+                        <td className="py-3 text-muted">
+                          {branch.address}, {branch.city}, {branch.state},{" "}
+                          {branch.country}
+                        </td>
+                        <td className="py-3 text-muted">
+                          <div>{branch.phone}</div>
+                          <div>{branch.contactEmail}</div>
+                        </td>
+                        <td className="py-3">
+                          <span
+                            className={`badge px-2 py-1 ${
+                              branch.status
+                                ? "bg-success-subtle text-success"
+                                : "bg-danger-subtle text-danger"
+                            }`}
+                          >
+                            {branch.status ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td className="py-3 text-muted">
+                          {moment(branch.createdAt).format("YYYY-MM-DD")}
+                        </td>
+                        <td className="py-3 text-center">
+                          {canUpdate && (
                             <BsPencil
                               size={18}
                               className="mx-2 text-warning"
                               title="Edit"
                               onClick={() => handleOpenEditModal(branch)}
                             />
+                          )}
+                          {canDelete && (
                             <BsTrash
                               size={18}
                               className="mx-2 text-danger"
                               title="Delete"
                               onClick={() => handleDeleteBranch(branch._id)}
                             />
-                          </td>
-                        </tr>
-                      ))
-                    : (
-                        <tr>
-                          <td colSpan={7} className="text-center py-4">
-                            <NoRecordFound />
-                          </td>
-                        </tr>
-                      )}
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="text-center py-4">
+                        <NoRecordFound />
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -334,7 +380,9 @@ function BranchList() {
                 />
               </div>
 
-              <h5 className="mb-4">{editingBranch ? "Edit Branch" : "Add Branch"}</h5>
+              <h5 className="mb-4">
+                {editingBranch ? "Edit Branch" : "Add Branch"}
+              </h5>
 
               {[
                 { name: "branchName", label: "Branch Name *" },
@@ -347,7 +395,9 @@ function BranchList() {
                 { name: "email", label: "Contact Email" },
               ].map((field) => (
                 <div className="mb-3" key={field.name}>
-                  <label className="form-label mb-1 text-muted fw-normal">{field.label}</label>
+                  <label className="form-label mb-1 text-muted fw-normal">
+                    {field.label}
+                  </label>
                   <input
                     type="text"
                     className="form-control"
@@ -372,7 +422,10 @@ function BranchList() {
                 </label>
               </div>
 
-              <button className="btn btn-success w-100 mt-3" onClick={handleSaveBranch}>
+              <button
+                className="btn btn-success w-100 mt-3"
+                onClick={handleSaveBranch}
+              >
                 {editingBranch ? "Update" : "Submit"}
               </button>
             </div>

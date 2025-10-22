@@ -335,7 +335,7 @@ const EditRoleModal = ({ show, onClose, onRoleUpdated, roleId }) => {
                                                         className="form-check-label fw-semibold ms-1"
                                                         htmlFor={`perm-${permission._id}`}
                                                     >
-                                                        {permission.name}
+                                                        {permission.module}
                                                     </label>
                                                 </div>
                                                 <span className="badge bg-secondary-subtle text-secondary">

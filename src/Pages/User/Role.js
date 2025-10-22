@@ -255,7 +255,7 @@ function RolesList() {
                       : list.length > 0
                       ? list.map((role, i) => {
                           const permissions = Array.isArray(role.permissions) 
-                            ? role.permissions.map((perm) => perm.permissionId?.name)
+                            ? role.permissions.map((perm) => perm.permissionId?.module)
                             : [];
 
                           return (

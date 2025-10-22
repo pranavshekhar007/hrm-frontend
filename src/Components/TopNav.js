@@ -33,6 +33,8 @@ function TopNav() {
       navigate("/");
     }
   };
+  const roleName = globalState?.user?.role?.name || "Company";
+
 
   return (
     // NOTE: Setting a background color here to distinguish the top nav, 
@@ -99,7 +101,7 @@ function TopNav() {
 
           {/* Company Icon */}
           <div className="d-flex align-items-center me-3" style={{ cursor: "pointer" }}>
-            <p className="mb-0" style={{ color: "white" }}>Company</p>
+          <p className="mb-0" style={{ color: "white" }}>{roleName}</p>
           </div>
           
           {/* User Profile / Placeholder Icon */}

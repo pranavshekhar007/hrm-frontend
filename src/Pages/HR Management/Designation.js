@@ -7,6 +7,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import moment from "moment";
 import NoRecordFound from "../../Components/NoRecordFound";
+import { usePermission } from "../../hooks/usePermission";
+import ActionButtons from "../../Components/ActionButtons";
 
 // Icons from the DepartmentList.jsx reference and the UI screenshot
 import { BsPencil, BsTrash, BsEye } from "react-icons/bs"; // Added BsEye for 'View'
@@ -46,6 +48,9 @@ function DesignationList() {
     sortByField: "createdAt",
     sortByOrder: "desc",
   });
+
+  const { canView, canCreate, canUpdate, canDelete } =
+    usePermission("Designation");
 
   // Designation form structure based on the image's columns: Name, Description, Department, Status
   const [designationForm, setDesignationForm] = useState({
@@ -244,14 +249,17 @@ function DesignationList() {
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
             <h3 className="fw-semibold mb-0">Designation Management</h3>
-            <button
-              className="btn text-white px-3"
-              style={{ background: "#16A34A", borderRadius: "0.5rem" }}
-              onClick={handleOpenAddModal}
-            >
-              <RiAddLine size={20} className="me-1" />
-              Add Designation
-            </button>
+
+            {canCreate && (
+              <button
+                className="btn text-white px-3"
+                style={{ background: "#16A34A", borderRadius: "0.5rem" }}
+                onClick={handleOpenAddModal}
+              >
+                <RiAddLine size={20} className="me-1" />
+                Add Designation
+              </button>
+            )}
           </div>
 
           {/* Search Bar - Changed layout slightly to match image better */}
@@ -408,26 +416,13 @@ function DesignationList() {
                           {moment(designation.createdAt).format("YYYY-MM-DD")}
                         </td>
                         <td className="text-center pe-4">
-                          {/* View Icon (BsEye) */}
-                          {/* <BsEye
-                            size={18}
-                            className="mx-2 text-primary"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleViewDesignation(designation)}
-                          /> */}
-                          {/* Edit Icon (BsPencil) */}
-                          <BsPencil
-                            size={18}
-                            className="mx-2 text-warning"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleOpenEditModal(designation)}
-                          />
-                          {/* Delete Icon (BsTrash) */}
-                          <BsTrash
-                            size={18}
-                            className="mx-2 text-danger"
-                            style={{ cursor: "pointer" }}
-                            onClick={() =>
+                          <ActionButtons
+                            // canView={canView}
+                            canUpdate={canUpdate}
+                            canDelete={canDelete}
+                            onView={() => handleViewDesignation(designation)}
+                            onEdit={() => handleOpenEditModal(designation)}
+                            onDelete={() =>
                               handleDeleteDesignation(designation._id)
                             }
                           />

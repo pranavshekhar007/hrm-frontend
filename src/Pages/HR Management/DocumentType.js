@@ -7,6 +7,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import moment from "moment";
 import NoRecordFound from "../../Components/NoRecordFound";
+import { usePermission } from "../../hooks/usePermission";
+import ActionButtons from "../../Components/ActionButtons";
 
 // Icons
 import { BsPencil, BsTrash, BsEye } from "react-icons/bs";
@@ -40,6 +42,9 @@ function DocumentTypeList() {
     sortByField: "createdAt",
     sortByOrder: "desc",
   });
+
+  const { canView, canCreate, canUpdate, canDelete } =
+    usePermission("Documents Type");
 
   // State field name changed to 'required' to match the backend JSON
   const [documentTypeForm, setDocumentTypeForm] = useState({
@@ -171,14 +176,16 @@ function DocumentTypeList() {
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
             <h3 className="fw-semibold mb-0">Document Type Management</h3>
-            <button
-              className="btn text-white px-3"
-              style={{ background: "#16A34A", borderRadius: "0.5rem" }}
-              onClick={handleOpenAddModal}
-            >
-              <RiAddLine size={20} className="me-1" />
-              Add Document Type
-            </button>
+            {canCreate && (
+              <button
+                className="btn text-white px-3"
+                style={{ background: "#16A34A", borderRadius: "0.5rem" }}
+                onClick={handleOpenAddModal}
+              >
+                <RiAddLine size={20} className="me-1" />
+                Add Document Type
+              </button>
+            )}
           </div>
 
           {/* Search Bar */}
@@ -302,7 +309,15 @@ function DocumentTypeList() {
                       <tr key={documentType._id}>
                         <td className="ps-4 py-3">{startIndex + i + 1}</td>
                         <td className="fw-semibold">{documentType.name}</td>
-                        <td>
+                        <td
+                          className="text-dark fw-medium px-3 py-2"
+                          style={{
+                            maxWidth: "250px",
+                            fontSize: "0.875rem",
+                            whiteSpace: "normal",
+                            wordWrap: "break-word",
+                          }}
+                        >
                           {documentType.description
                             ? documentType.description.substring(0, 100) +
                               (documentType.description.length > 100
@@ -315,11 +330,11 @@ function DocumentTypeList() {
                             <span
                               className="badge fw-semibold d-inline-flex align-items-center"
                               style={{
-                                backgroundColor: "rgba(22, 163, 74, 0.15)", 
-                                color: "#16A34A", 
+                                backgroundColor: "rgba(22, 163, 74, 0.15)",
+                                color: "#16A34A",
                                 padding: "0.4rem 0.75rem",
-                                borderRadius: "0.5rem", 
-                                fontSize: "0.8rem", 
+                                borderRadius: "0.5rem",
+                                fontSize: "0.8rem",
                               }}
                             >
                               <MdOutlineCheckCircle
@@ -347,24 +362,14 @@ function DocumentTypeList() {
                         <td>
                           {moment(documentType.createdAt).format("YYYY-MM-DD")}
                         </td>
-                        <td className="text-center pe-4">
-                          <BsEye
-                            size={18}
-                            className="mx-2 text-primary"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleViewDocumentType(documentType)}
-                          />
-                          <BsPencil
-                            size={18}
-                            className="mx-2 text-warning"
-                            style={{ cursor: "pointer" }}
-                            onClick={() => handleOpenEditModal(documentType)}
-                          />
-                          <BsTrash
-                            size={18}
-                            className="mx-2 text-danger"
-                            style={{ cursor: "pointer" }}
-                            onClick={() =>
+                        <td>
+                          <ActionButtons
+                            // canView={canView}
+                            canUpdate={canUpdate}
+                            canDelete={canDelete}
+                            onView={() => handleViewDocumentType(documentType)}
+                            onEdit={() => handleOpenEditModal(documentType)}
+                            onDelete={() =>
                               handleDeleteDocumentType(documentType._id)
                             }
                           />

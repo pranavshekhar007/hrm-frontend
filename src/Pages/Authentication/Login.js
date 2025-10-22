@@ -36,12 +36,12 @@ export default function Login() {
           localStorage.setItem("user", JSON.stringify(response?.data?.data));
           localStorage.setItem(
             "permissions",
-            JSON.stringify(response?.data?.data?.permissions)
+            JSON.stringify(response?.data?.data?.role?.permissions)
           );
           setGlobalState({
             token: response?.data?.data?.token,
             user: response?.data?.data,
-            permissions: response?.data?.data?.permissions,
+            permissions: response?.data?.data?.role?.permissions,
           });
           navigate("/");
         } else {
