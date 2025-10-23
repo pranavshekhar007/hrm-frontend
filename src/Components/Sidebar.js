@@ -16,7 +16,7 @@ function Sidebar({ selectedMenu, selectedItem }) {
   const allNavItems = useMemo(
     () => [
       {
-        menuIcon: "https://cdn-icons-png.flaticon.com/128/1828/1828791.png",
+        menuIcon: "https://cdn-icons-png.flaticon.com/128/1828/1828765.png",
         menu: "Dashboard",
         subMenu: [{ name: "Dashboard", path: "/" }],
       },
@@ -29,7 +29,7 @@ function Sidebar({ selectedMenu, selectedItem }) {
         ],
       },
       {
-        menuIcon: "https://cdn-icons-png.flaticon.com/128/1077/1077114.png",
+        menuIcon: "https://cdn-icons-png.flaticon.com/128/9720/9720869.png",
         menu: "Hr Management",
         subMenu: [
           { name: "Branches", path: "/branch-list", module: "Branches" },
@@ -39,6 +39,13 @@ function Sidebar({ selectedMenu, selectedItem }) {
           { name: "Employee", path: "/employee-list", module: "Employee" },
           { name: "Award Types", path: "/award-type", module: "Award Types" },
           { name: "Awards", path: "/award-list", module: "Awards" },
+        ],
+      },
+      {
+        menuIcon: "https://cdn-icons-png.flaticon.com/128/2278/2278049.png",
+        menu: "Leave Management",
+        subMenu: [
+          { name: "Leave Types", path: "/leave-type", module: "Leave Types" },
         ],
       },
     ],

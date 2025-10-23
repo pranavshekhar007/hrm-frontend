@@ -64,6 +64,7 @@ import CreateEmployee from '../Pages/HR Management/CreateEmployee';
 import EditEmployee from '../Pages/HR Management/EditEmployee';
 import AwardTypeList from '../Pages/HR Management/AwardType';
 import AwardList from '../Pages/HR Management/AwardList';
+import LeaveType from '../Pages/LeaveManagement/LeaveType';
 
 
 function AuthenticatedRoutes() {
@@ -179,6 +180,9 @@ function AuthenticatedRoutes() {
         <Route path='/edit-employee/:id' element={<EditEmployee />} />
         <Route path='/award-type' element={<AwardTypeList />} />
         <Route path='/award-list' element={<AwardList />} />
+
+        {/* Leave Management  */}
+        <Route path='/leave-type' element={<LeaveType />} />
     </Routes>
   )
 }

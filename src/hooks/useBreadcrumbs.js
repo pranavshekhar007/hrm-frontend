@@ -47,19 +47,20 @@ const NAV_STRUCTURE = [
       {
         name: "Award Types",
         path: "/award-type",
-       
       },
       {
         name: "Awards",
         path: "/award-list",
-      
       },
       {
         name: "Promotion",
         path: "/promotion-list",
-        
       },
     ],
+  },
+  {
+    menu: "Leave Management",
+    subMenu: [{ name: "Leave Types", path: "/leave-type" }],
   },
 ];
 
