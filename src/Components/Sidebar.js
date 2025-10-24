@@ -21,7 +21,7 @@ function Sidebar({ selectedMenu, selectedItem }) {
         subMenu: [{ name: "Dashboard", path: "/" }],
       },
       {
-        menuIcon: "https://cdn-icons-png.flaticon.com/128/1077/1077114.png",
+        menuIcon: "https://cdn-icons-png.flaticon.com/128/1144/1144760.png",
         menu: "Staff",
         subMenu: [
           { name: "Users", path: "/user-list", module: "Users" },
@@ -46,6 +46,20 @@ function Sidebar({ selectedMenu, selectedItem }) {
         menu: "Leave Management",
         subMenu: [
           { name: "Leave Types", path: "/leave-type", module: "Leave Types" },
+          { name: "Leave Policies", path: "/leave-policy", module: "Leave Policies" },
+          { name: "Leave Application", path: "/leave-application", module: "Leave Application" },
+          { name: "Leave Balance", path: "/leave-balance", module: "Leave Balance" },
+          
+        ],
+      },
+      {
+        menuIcon: "https://cdn-icons-png.flaticon.com/128/3839/3839635.png",
+        menu: "Attendance Management",
+        subMenu: [
+          { name: "Shifts", path: "/shift", module: "Shifts" },
+          { name: "Attendance Policy", path: "/attendance-policy", module: "Attendance Policy" },
+          { name: "Attendance Record", path: "/attendance-record", module: "Attendance Record" },
+          { name: "Attendance Regularization", path: "/attendance-regularization", module: "Attendance Regularization" },
         ],
       },
     ],

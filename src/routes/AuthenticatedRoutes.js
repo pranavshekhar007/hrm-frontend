@@ -65,6 +65,13 @@ import EditEmployee from '../Pages/HR Management/EditEmployee';
 import AwardTypeList from '../Pages/HR Management/AwardType';
 import AwardList from '../Pages/HR Management/AwardList';
 import LeaveType from '../Pages/LeaveManagement/LeaveType';
+import LeavePolicies from '../Pages/LeaveManagement/LeavePolicies';
+import LeaveApplicationList from '../Pages/LeaveManagement/LeaveApplicationList';
+import LeaveBalance from '../Pages/LeaveManagement/LeaveBalance';
+import Shifts from '../Pages/Attendance/Shifts';
+import AttendancePolicy from '../Pages/Attendance/AttendancePolicy';
+import AttendanceRecord from '../Pages/Attendance/AttendanceRecord';
+import AttendanceRegularization from '../Pages/Attendance/AttendanceRegularization';
 
 
 function AuthenticatedRoutes() {
@@ -183,6 +190,15 @@ function AuthenticatedRoutes() {
 
         {/* Leave Management  */}
         <Route path='/leave-type' element={<LeaveType />} />
+        <Route path='/leave-policy' element={<LeavePolicies />} />
+        <Route path='/leave-application' element={<LeaveApplicationList />} />
+        <Route path='/leave-balance' element={<LeaveBalance />} />
+
+        {/* Attendance Management  */}
+        <Route path='/shift' element={<Shifts />} />
+        <Route path='/attendance-policy' element={<AttendancePolicy />} />
+        <Route path='/attendance-record' element={<AttendanceRecord />} />
+        <Route path='/attendance-regularization' element={<AttendanceRegularization />} />
     </Routes>
   )
 }

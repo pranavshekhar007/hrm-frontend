@@ -60,7 +60,21 @@ const NAV_STRUCTURE = [
   },
   {
     menu: "Leave Management",
-    subMenu: [{ name: "Leave Types", path: "/leave-type" }],
+    subMenu: [{ name: "Leave Types", path: "/leave-type" },
+      { name: "Leave Policies", path: "/leave-policy" },
+      { name: "Leave Application", path: "/leave-application" },
+      { name: "Leave Balance", path: "/leave-balance" },
+    ],
+  },
+  {
+    menu: "Attendance Management",
+    subMenu: [
+      { name: "Shifts", path: "/shift" },
+      { name: "Attendance Policy", path: "/attendance-policy"},
+      { name: "Attendance Record", path: "/attendance-record"},
+      { name: "Attendance Regularization", path: "/attendance-regularization"},
+      
+    ],
   },
 ];
 
