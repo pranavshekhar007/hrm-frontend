@@ -13,7 +13,7 @@ const getConfig = () => ({
 
 export const createShiftServ = async (formData) => {
   try {
-    const response = await axios.post(`${BASE_URL}/shifts/create`, formData);
+    const response = await axios.post(`${BASE_URL}shifts/create`, formData);
     return response.data;
   } catch (error) {
     console.error("Create Shift Error:", error);
@@ -23,7 +23,7 @@ export const createShiftServ = async (formData) => {
 
 export const getShiftListServ = async (bodyData) => {
   try {
-    const response = await axios.post(`${BASE_URL}/shifts/list`, bodyData);
+    const response = await axios.post(`${BASE_URL}shifts/list`, bodyData);
     return response.data;
   } catch (error) {
     console.error("Get Shift List Error:", error);
@@ -33,7 +33,7 @@ export const getShiftListServ = async (bodyData) => {
 
 export const updateShiftServ = async (formData) => {
   try {
-    const response = await axios.put(`${BASE_URL}/shifts/update`, formData);
+    const response = await axios.put(`${BASE_URL}shifts/update`, formData);
     return response.data;
   } catch (error) {
     console.error("Update Shift Error:", error);
@@ -43,7 +43,7 @@ export const updateShiftServ = async (formData) => {
 
 export const deleteShiftServ = async (id) => {
   try {
-    const response = await axios.delete(`${BASE_URL}/shifts/delete/${id}`);
+    const response = await axios.delete(`${BASE_URL}shifts/delete/${id}`);
     return response.data;
   } catch (error) {
     console.error("Delete Shift Error:", error);
