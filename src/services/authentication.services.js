@@ -4,15 +4,13 @@ import { BASE_URL } from "../utils/api_base_url_configration";
 
 const token = localStorage.getItem("token");
 
-const getConfig = () => {
-  return {
-    headers: {
-      "Content-Type": "multipart/form-data",
-      Accept: "application/json",
-      Authorization: `Bearer ${JSON.parse(localStorage.getItem("token"))}`,
-    },
-  };
-};
+const getConfig = (isMultipart = false) => ({
+  headers: {
+    "Content-Type": isMultipart ? "multipart/form-data" : "application/json",
+    Accept: "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+});
 
 export const loginServ = async (formData) => {
   try {
@@ -27,7 +25,7 @@ export const loginServ = async (formData) => {
 
 export const createAdmin = async (formData) => {
   try {
-    const response = await axios.post(`${BASE_URL}admin/create`, formData);
+    const response = await axios.post(`${BASE_URL}admin/create`, formData, getConfig());
     return response.data;
   } catch (error) {
     console.error("Create Admin error:", error.response?.data || error.message);

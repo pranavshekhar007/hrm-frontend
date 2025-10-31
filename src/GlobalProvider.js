@@ -5,8 +5,10 @@ const GlobalStateContext = createContext();
 export const GlobalStateProvider = ({ children }) => {
   const [globalState, setGlobalState] = useState(() => ({
     user: JSON.parse(localStorage.getItem("user")) || null,
-    token: (localStorage.getItem("token")) || null,
-    permissions: (localStorage.getItem("permissions")) || null,
+    token: localStorage.getItem("token") || null,
+
+    // 🛑 FIX: Retrieve permissions using JSON.parse() (they were stored stringified)
+    permissions: JSON.parse(localStorage.getItem("permissions")) || null,
     notificationList: 0,
     showFullSidebar: true,
     isMobile: window.innerWidth <= 768,
@@ -14,7 +16,10 @@ export const GlobalStateProvider = ({ children }) => {
 
   useEffect(() => {
     const handleResize = () => {
-      setGlobalState((prev) => ({ ...prev, isMobile: window.innerWidth <= 768 }));
+      setGlobalState((prev) => ({
+        ...prev,
+        isMobile: window.innerWidth <= 768,
+      }));
     };
 
     window.addEventListener("resize", handleResize);
@@ -26,7 +31,11 @@ export const GlobalStateProvider = ({ children }) => {
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--sidebar-width",
-      globalState.showFullSidebar ? (globalState.isMobile ? "100%" : "20%") : "0%"
+      globalState.showFullSidebar
+        ? globalState.isMobile
+          ? "100%"
+          : "20%"
+        : "0%"
     );
   }, [globalState.showFullSidebar, globalState.isMobile]);
 

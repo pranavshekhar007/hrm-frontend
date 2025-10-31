@@ -1,21 +1,23 @@
 import axios from "axios";
 import { BASE_URL } from "../../src/utils/api_base_url_configration";
 
-const token = localStorage.getItem("token");
+const getConfig = (isMultipart = false) => {
+  const token = localStorage.getItem("token"); 
 
-const getConfig = (isMultipart = false) => ({
-  headers: {
-    "Content-Type": isMultipart ? "multipart/form-data" : "application/json",
-    Accept: "application/json",
-    Authorization: `Bearer ${token}`,
-  },
-});
+  return {
+      headers: {
+          "Content-Type": isMultipart ? "multipart/form-data" : "application/json",
+          Accept: "application/json",
+          Authorization: token ? `Bearer ${token}` : "", 
+      },
+  };
+};
 
 export const addLeaveApplicationServ = async (formData) => {
   try {
     const response = await axios.post(
       BASE_URL + "leave-application/create",
-      formData,
+      formData, getConfig()
     );
     return response;
   } catch (error) {
@@ -28,7 +30,7 @@ export const getLeaveApplicationListServ = async (formData) => {
   try {
     const response = await axios.post(
       BASE_URL + "leave-application/list",
-      formData,
+      formData, getConfig()
     );
     return response;
   } catch (error) {
@@ -41,7 +43,7 @@ export const updateLeaveApplicationServ = async (formData) => {
   try {
     const response = await axios.put(
       BASE_URL + "leave-application/update",
-      formData,
+      formData
     );
     return response;
   } catch (error) {
@@ -53,7 +55,7 @@ export const updateLeaveApplicationServ = async (formData) => {
 export const deleteLeaveApplicationServ = async (id) => {
   try {
     const response = await axios.delete(
-      BASE_URL + "leave-application/delete/" + id,
+      BASE_URL + "leave-application/delete/" + id
     );
     return response;
   } catch (error) {
@@ -62,12 +64,11 @@ export const deleteLeaveApplicationServ = async (id) => {
   }
 };
 
-
 export const updateLeaveApplicationStatusServ = async (id, status) => {
   try {
     const response = await axios.put(
       BASE_URL + `leave-application/update-status/${id}`,
-      { status },
+      { status }
     );
     return response;
   } catch (error) {

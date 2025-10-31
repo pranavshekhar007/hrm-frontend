@@ -31,7 +31,7 @@ export default function Login() {
           toast.success(response?.data?.message);
           localStorage.setItem(
             "token",
-            JSON.stringify(response?.data?.data?.token)
+            response?.data?.token
           );
           localStorage.setItem("user", JSON.stringify(response?.data?.data));
           localStorage.setItem(
@@ -39,7 +39,7 @@ export default function Login() {
             JSON.stringify(response?.data?.data?.role?.permissions)
           );
           setGlobalState({
-            token: response?.data?.data?.token,
+            token: response?.data?.token,
             user: response?.data?.data,
             permissions: response?.data?.data?.role?.permissions,
           });
